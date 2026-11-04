@@ -78,6 +78,24 @@ PanelWindow {
     readonly property real along: horizontal ? shownWidth : shownHeight
     readonly property real across: horizontal ? shownHeight : shownWidth
 
+    // The surface's size: it grows to a larger body at once and shrinks only once the drawer
+    // is closed; the body glides inside it (the mask keeps clicks on the rest going through).
+    // Every new size of a layer surface stalls a frame until Hyprland configures it (the
+    // swap waited 100 ms each), and the glide used to resize it on every frame (~10 fps).
+    property real windowWidth: bodyWidth
+    property real windowHeight: bodyHeight
+    onBodyWidthChanged: windowWidth = visible ? Math.max(windowWidth, bodyWidth) : bodyWidth
+    onBodyHeightChanged: windowHeight = visible ? Math.max(windowHeight, bodyHeight) : bodyHeight
+    onVisibleChanged: {
+        if (!visible) {
+            windowWidth = bodyWidth;
+            windowHeight = bodyHeight;
+        }
+    }
+    // Where the body sits along the edge inside a surface that is longer than it for now
+    readonly property real slack: Math.max(0, (horizontal ? windowWidth : windowHeight) - along)
+    readonly property real alongOffset: align === "end" ? slack : align === "start" ? 0 : slack / 2
+
     property real progress: open ? 1 : 0
     readonly property real extent: progress * across
     readonly property real contentShown: open ? Math.max(0, (progress - 0.35) / 0.65) : Math.max(0, progress * 1.5 - 0.5)
@@ -106,8 +124,8 @@ PanelWindow {
 
     visible: open || progress > 0.001
     color: "transparent"
-    implicitWidth: horizontal ? shownWidth + joint * 2 : shownWidth
-    implicitHeight: horizontal ? shownHeight : shownHeight + joint * 2
+    implicitWidth: horizontal ? windowWidth + joint * 2 : Math.max(windowWidth, shownWidth)
+    implicitHeight: horizontal ? Math.max(windowHeight, shownHeight) : windowHeight + joint * 2
 
     // Inside the hole: other layers' exclusive zones (the frame's) are respected, none is set
     exclusionMode: ExclusionMode.Normal
@@ -146,17 +164,18 @@ PanelWindow {
         const r = Math.max(0, Math.min(radius, E - f, L / 2));
         const W = width, H = height;
         const flip = edge === "bottom" || edge === "left";
+        const o = alongOffset;
         const concave = flip ? 1 : 0, convex = flip ? 0 : 1;
         const p = (u, v) => {
             switch (edge) {
             case "bottom":
-                return `${u} ${H - v}`;
+                return `${u + o} ${H - v}`;
             case "left":
-                return `${v} ${u}`;
+                return `${v} ${u + o}`;
             case "right":
-                return `${W - v} ${u}`;
+                return `${W - v} ${u + o}`;
             default:
-                return `${u} ${v}`;
+                return `${u + o} ${v}`;
             }
         };
         const arc = (rad, sweep, u, v) => rad > 0 ? `A ${rad} ${rad} 0 0 ${sweep} ${p(u, v)} ` : `L ${p(u, v)} `;
@@ -191,8 +210,8 @@ PanelWindow {
     Item {
         id: clipper
 
-        x: root.edge === "right" ? root.width - root.extent : root.horizontal ? root.joint : 0
-        y: root.edge === "bottom" ? root.height - root.extent : root.horizontal ? 0 : root.joint
+        x: root.edge === "right" ? root.width - root.extent : root.horizontal ? root.joint + root.alongOffset : 0
+        y: root.edge === "bottom" ? root.height - root.extent : root.horizontal ? 0 : root.joint + root.alongOffset
         width: root.horizontal ? root.along : root.extent
         height: root.horizontal ? root.extent : root.along
         clip: true
