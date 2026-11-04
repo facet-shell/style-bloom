@@ -157,7 +157,7 @@ Scope {
 
             anchors.centerIn: parent
             text: "LIVE"
-            color: Theme.onErrorContainer
+            color: Theme.textOnErrorContainer
             font.pixelSize: Theme.size.tiny - 2
             font.weight: Font.Bold
         }
@@ -269,7 +269,7 @@ Scope {
                 StyledText {
                     visible: root.moving && root.members.length === 0
                     text: "voice overlay"
-                    color: Theme.onScrim
+                    color: Theme.textOnScrim
                 }
 
                 // ── list and "only who talks": one row each ──
@@ -332,7 +332,7 @@ Scope {
                                 anchors.verticalCenter: parent.verticalCenter
                                 width: Math.min(implicitWidth, 200)
                                 text: row.modelData.name ?? ""
-                                color: row.talking ? Theme.onScrim : Theme.dim
+                                color: row.talking ? Theme.textOnScrim : Theme.dim
                                 font.pixelSize: root.small ? Theme.size.tiny : Theme.size.small + 1
                                 opacity: row.enter
                                 transform: Translate {
@@ -416,7 +416,7 @@ Scope {
                                 width: cell.cellWidth
                                 horizontalAlignment: Text.AlignHCenter
                                 text: cell.modelData.name ?? ""
-                                color: Theme.onScrim
+                                color: Theme.textOnScrim
                                 font.pixelSize: Theme.size.tiny - 1
                                 opacity: cell.talking ? 1 : 0
 

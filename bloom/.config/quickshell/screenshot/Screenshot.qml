@@ -862,7 +862,7 @@ Scope {
             }
             StyledText {
                 text: Recorder.stopping ? "saving …" : `rec ${Recorder.elapsed}`
-                color: indicator.compact ? Theme.onScrim : Theme.text
+                color: indicator.compact ? Theme.textOnScrim : Theme.text
                 tabular: true
                 font.pixelSize: Theme.size.small + 1
                 font.weight: Font.Medium
@@ -871,7 +871,7 @@ Scope {
                 visible: !Recorder.stopping
                 icon: "stop_circle"
                 size: Theme.icon.small
-                color: indicator.compact ? Theme.onScrim : Theme.error
+                color: indicator.compact ? Theme.textOnScrim : Theme.error
             }
         }
     }

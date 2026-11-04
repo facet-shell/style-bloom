@@ -299,7 +299,7 @@ Rectangle {
                     anchors.verticalCenter: parent.verticalCenter
                     width: parent.width - Theme.spacing.normal * 2
                     text: piece.g ? `${root.editor.fmt(piece.g.a)}–${root.editor.fmt(piece.g.b)}` : ""
-                    color: piece.isSelected ? Theme.onPrimary : Theme.onPrimaryContainer
+                    color: piece.isSelected ? Theme.textOnPrimary : Theme.textOnPrimaryContainer
                     tabular: true
                     font.pixelSize: Theme.size.tiny - 1
                 }

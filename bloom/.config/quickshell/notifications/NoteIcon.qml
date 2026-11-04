@@ -50,7 +50,7 @@ Item {
             anchors.centerIn: parent
             icon: root.symbol
             size: root.size * 0.5
-            color: root.entry.critical ? Theme.onErrorContainer : Theme.onPrimaryContainer
+            color: root.entry.critical ? Theme.textOnErrorContainer : Theme.textOnPrimaryContainer
         }
     }
 

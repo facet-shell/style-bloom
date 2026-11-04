@@ -120,7 +120,7 @@ Rectangle {
         radius: Theme.rounding.small
         color: keyId === "" ? "transparent" : lit ? Theme.primary : isSuper ? Theme.primaryContainer : Theme.container
         border.width: hot ? 2 : 0
-        border.color: lit ? Theme.onPrimary : Theme.primary
+        border.color: lit ? Theme.textOnPrimary : Theme.primary
         scale: hot ? 1.06 : 1
 
         Behavior on scale {
@@ -133,7 +133,7 @@ Rectangle {
         StyledText {
             anchors.centerIn: parent
             text: key.spec[0]
-            color: key.lit ? Theme.onPrimary : key.isSuper ? Theme.onPrimaryContainer : Theme.dim
+            color: key.lit ? Theme.textOnPrimary : key.isSuper ? Theme.textOnPrimaryContainer : Theme.dim
             font.pixelSize: key.spec[0].length > 1 ? Theme.size.tiny : Theme.size.normal
             font.weight: key.lit || key.isSuper ? Font.Medium : Font.Normal
         }

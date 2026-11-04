@@ -16,7 +16,7 @@ Scope {
 
     readonly property string position: Config.notificationPosition
     readonly property string side: Config.side(position)
-    readonly property bool top: Config.atTop(position)
+    readonly property bool atTop: Config.atTop(position)
     readonly property bool compact: Bloom.compact("notification")
     // Room inside the window for the cards' shadows and a call's glow; the window sits at
     // the hole's edge, so this is also the distance to it
@@ -60,7 +60,7 @@ Scope {
                 // ScriptModel keeps existing cards (and their timers) when the list changes
                 Repeater {
                     model: ScriptModel {
-                        values: root.top ? Notifications.popups : Notifications.popups.slice().reverse()
+                        values: root.atTop ? Notifications.popups : Notifications.popups.slice().reverse()
                     }
 
                     delegate: NoteCard {
@@ -68,7 +68,7 @@ Scope {
 
                         entry: modelData
                         side: root.side
-                        top: root.top
+                        atTop: root.atTop
                         compact: root.compact
                         compactWidth: column.width
                         cardWidth: column.width

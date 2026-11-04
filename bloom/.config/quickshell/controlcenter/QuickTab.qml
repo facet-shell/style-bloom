@@ -31,7 +31,7 @@ ColumnLayout {
         property string subtitle: ""
         property bool checked: false
         property bool available: true
-        readonly property color foreground: checked ? Theme.onPrimary : Theme.text
+        readonly property color foreground: checked ? Theme.textOnPrimary : Theme.text
 
         signal clicked()
 
@@ -81,7 +81,7 @@ ColumnLayout {
                 StyledText {
                     Layout.fillWidth: true
                     text: !tile.available ? "not here" : tile.subtitle
-                    color: tile.checked ? Theme.alpha(Theme.onPrimary, 0.75) : Theme.dim
+                    color: tile.checked ? Theme.alpha(Theme.textOnPrimary, 0.75) : Theme.dim
                     font.pixelSize: Theme.size.tiny
                 }
             }
@@ -161,15 +161,15 @@ ColumnLayout {
 
         // The mic fader's mute on a GoXLR, else the default microphone's (like tui)
         Tile {
-            readonly property bool onFader: GoXLR.fader("mic") !== null
+            readonly property bool micOnFader: GoXLR.fader("mic") !== null
 
             icon: checked ? "mic_off" : "mic"
             title: "Mic mute"
-            checked: onFader ? GoXLR.fader("mic").muted : Audio.defaultSource?.audio?.muted ?? false
-            available: onFader || Audio.defaultSource !== null
+            checked: micOnFader ? GoXLR.fader("mic").muted : Audio.defaultSource?.audio?.muted ?? false
+            available: micOnFader || Audio.defaultSource !== null
             subtitle: checked ? "muted" : "off"
             onClicked: {
-                if (onFader)
+                if (micOnFader)
                     GoXLR.setMuted("mic", !checked);
                 else
                     Audio.toggleMute(Audio.defaultSource);

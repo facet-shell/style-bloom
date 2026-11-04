@@ -198,7 +198,7 @@ FocusScope {
         radius: width / 2
         color: Theme.primary
         border.width: 2
-        border.color: Theme.onPrimary
+        border.color: Theme.textOnPrimary
     }
 
     // ── Layout ───────────────────────────────────────────────
@@ -222,7 +222,7 @@ FocusScope {
                 Icon {
                     anchors.centerIn: parent
                     icon: root.painting ? "brush" : "photo"
-                    color: Theme.onPrimaryContainer
+                    color: Theme.textOnPrimaryContainer
                 }
             }
 

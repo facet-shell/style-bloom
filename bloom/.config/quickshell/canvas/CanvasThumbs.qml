@@ -18,7 +18,7 @@ Scope {
     readonly property int thumbW: 480
 
     // Windows at least partly on their screen; only those have a picture to take
-    readonly property var onScreen: CanvasLayout.windows.filter(w => {
+    readonly property var windowsOnScreen: CanvasLayout.windows.filter(w => {
         const v = CanvasLayout.viewOf(CanvasLayout.monitor(w.monitor));
         return w.x < v.x + v.w && w.x + w.w > v.x && w.y < v.y + v.h && w.y + w.h > v.y;
     })
@@ -57,7 +57,7 @@ Scope {
 
         Repeater {
             model: ScriptModel {
-                values: root.onScreen
+                values: root.windowsOnScreen
                 objectProp: "address"
             }
 

@@ -412,7 +412,7 @@ RowLayout {
                                 text: modelData.text
                                 tabular: true
                                 opacity: modelData.inside ? 1 : 0.35
-                                color: modelData.today ? Theme.onPrimary : Theme.dim
+                                color: modelData.today ? Theme.textOnPrimary : Theme.dim
                                 font.pixelSize: Theme.size.tiny
                                 font.weight: modelData.today ? Font.DemiBold : Font.Normal
                             }

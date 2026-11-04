@@ -263,7 +263,7 @@ Scope {
                     anchors.centerIn: parent
                     icon: root.icon
                     size: (Theme.icon.normal - 1) * root.s
-                    color: root.muted ? Theme.onErrorContainer : Theme.onPrimaryContainer
+                    color: root.muted ? Theme.textOnErrorContainer : Theme.textOnPrimaryContainer
                 }
             }
 
@@ -328,7 +328,7 @@ Scope {
             Icon {
                 icon: root.icon
                 size: Theme.icon.small - 1
-                color: root.muted ? Theme.error : Theme.onScrim
+                color: root.muted ? Theme.error : Theme.textOnScrim
             }
             ProgressBar {
                 visible: root.level >= 0
@@ -336,11 +336,11 @@ Scope {
                 value: Math.max(0, root.level)
                 thickness: 4
                 color: root.muted ? Theme.error : Theme.primary
-                trackColor: Theme.alpha(Theme.onScrim, 0.18)
+                trackColor: Theme.alpha(Theme.textOnScrim, 0.18)
             }
             StyledText {
                 text: root.valueText
-                color: root.muted ? Theme.error : Theme.onScrim
+                color: root.muted ? Theme.error : Theme.textOnScrim
                 tabular: true
                 font.pixelSize: Theme.size.tiny
             }

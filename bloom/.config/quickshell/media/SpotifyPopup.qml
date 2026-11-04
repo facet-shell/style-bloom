@@ -400,7 +400,7 @@ Scope {
                         radius: width / 2
                         color: root.compact ? Theme.scrim : Theme.container
                         border.width: 2
-                        border.color: Theme.alpha(Theme.onScrim, 0.2)
+                        border.color: Theme.alpha(Theme.textOnScrim, 0.2)
                     }
                 }
 
@@ -425,14 +425,14 @@ Scope {
                     StyledText {
                         Layout.fillWidth: true
                         text: root.title
-                        color: root.compact ? Theme.onScrim : Theme.text
+                        color: root.compact ? Theme.textOnScrim : Theme.text
                         font.pixelSize: root.compact ? Theme.size.small : Theme.size.normal
                         font.weight: root.compact ? Font.Medium : Font.DemiBold
                     }
                     StyledText {
                         Layout.fillWidth: true
                         text: root.artist
-                        color: root.compact ? Theme.alpha(Theme.onScrim, 0.7) : Theme.dim
+                        color: root.compact ? Theme.alpha(Theme.textOnScrim, 0.7) : Theme.dim
                         font.pixelSize: root.compact ? Theme.size.tiny - 1 : Theme.size.tiny
                     }
                     ProgressBar {

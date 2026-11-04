@@ -18,7 +18,7 @@ Item {
     required property var entry
     // "left", "right" or "center", and whether the popups are at the top (Popups)
     property string side: "right"
-    property bool top: true
+    property bool atTop: true
     property bool compact: false
     property real cardWidth: Config.notificationWidth
     property real compactWidth: 320
@@ -209,13 +209,13 @@ Item {
             : 36
         opacity: Math.min(1, root.appear) * (1 - root.gone)
         scale: 0.92 + 0.08 * root.appear - 0.05 * root.gone
-        transformOrigin: root.side === "left" ? Item.Left : root.side === "right" ? Item.Right : root.top ? Item.Top : Item.Bottom
+        transformOrigin: root.side === "left" ? Item.Left : root.side === "right" ? Item.Right : root.atTop ? Item.Top : Item.Bottom
         // In from the side it sits on and out the same way; in the middle from the edge
         transform: Translate {
             x: root.side === "right" ? 70 * (1 - root.appear) + 50 * root.gone
                 : root.side === "left" ? -70 * (1 - root.appear) - 50 * root.gone
                 : 0
-            y: root.centered ? (root.top ? -24 : 24) * (1 - root.appear + root.gone) : 0
+            y: root.centered ? (root.atTop ? -24 : 24) * (1 - root.appear + root.gone) : 0
         }
 
         HoverHandler {
@@ -455,7 +455,7 @@ Item {
             StyledText {
                 Layout.fillWidth: true
                 text: root.entry.title
-                color: Theme.onScrim
+                color: Theme.textOnScrim
                 font.pixelSize: Theme.size.small
                 font.weight: Font.Medium
             }

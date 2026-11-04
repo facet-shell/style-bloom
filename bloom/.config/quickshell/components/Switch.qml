@@ -47,7 +47,7 @@ Item {
             radius: height / 2
             x: root.checked ? parent.width - width - 4 : (area.pressed ? 2 : 6)
             anchors.verticalCenter: parent.verticalCenter
-            color: root.checked ? Theme.onPrimary : Theme.outline
+            color: root.checked ? Theme.textOnPrimary : Theme.outline
 
             Behavior on x {
                 SpringAnim {}

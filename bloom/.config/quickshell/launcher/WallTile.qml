@@ -104,7 +104,7 @@ Item {
                 anchors.margins: 10
                 anchors.bottomMargin: 8
                 text: root.wall?.title ?? ""
-                color: Theme.onScrim
+                color: Theme.textOnScrim
                 font.pixelSize: Theme.size.tiny
                 font.weight: Font.Medium
             }
@@ -116,7 +116,7 @@ Item {
                 visible: root.wall !== null && root.wall.kind !== "image"
                 icon: "play_circle"
                 size: Theme.icon.small
-                color: Theme.onScrim
+                color: Theme.textOnScrim
             }
 
             Rectangle {
@@ -134,7 +134,7 @@ Item {
 
                     anchors.centerIn: parent
                     text: "in use"
-                    color: Theme.onPrimary
+                    color: Theme.textOnPrimary
                     font.pixelSize: Theme.size.tiny
                 }
             }

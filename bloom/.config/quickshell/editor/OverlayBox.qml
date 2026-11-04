@@ -28,7 +28,7 @@ Item {
 
     readonly property real block: Math.max(4, (o?.strength ?? 14) * 1.4 * (frame?.width ?? 1) / Math.max(1, nativeWidth))
     readonly property color tint: o?.type === "blur" ? Theme.tertiary : Theme.secondary
-    readonly property color onTint: Theme.page
+    readonly property color textOnTint: Theme.page
 
     visible: shown && o !== null
     x: (o?.x ?? 0) * (frame?.width ?? 0)
@@ -109,7 +109,7 @@ Item {
 
             anchors.centerIn: parent
             text: box.o?.name ?? ""
-            color: box.onTint
+            color: box.textOnTint
             font.pixelSize: Theme.size.tiny - 1
             font.weight: Font.Medium
         }
@@ -152,7 +152,7 @@ Item {
         radius: width / 2
         color: box.tint
         border.width: 2
-        border.color: box.onTint
+        border.color: box.textOnTint
         scale: sizeArea.pressed ? 1.25 : sizeArea.containsMouse ? 1.12 : 1
 
         Behavior on scale {

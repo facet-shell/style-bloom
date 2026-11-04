@@ -177,12 +177,12 @@ Item {
                         anchors.verticalCenter: parent.verticalCenter
                         icon: root.selected?.kind === "image" ? (root.selected?.source === "file" ? "folder" : "image") : "play_circle"
                         size: Theme.icon.small - 2
-                        color: Theme.onScrim
+                        color: Theme.textOnScrim
                     }
                     StyledText {
                         anchors.verticalCenter: parent.verticalCenter
                         text: root.kindLabel(root.selected)
-                        color: Theme.onScrim
+                        color: Theme.textOnScrim
                         font.pixelSize: Theme.size.tiny
                     }
                 }
@@ -216,7 +216,7 @@ Item {
 
                     StyledText {
                         text: root.selected?.title ?? ""
-                        color: Theme.onScrim
+                        color: Theme.textOnScrim
                         font.pixelSize: Theme.size.large - 2
                         font.weight: Font.DemiBold
                         Layout.maximumWidth: preview.width * 0.5
@@ -225,7 +225,7 @@ Item {
                         Layout.fillWidth: true
                         text: (root.selected?.tags ?? []).slice(0, 3).join(" · ")
                             || (root.selected?.source === "workshop" ? "Steam Workshop" : "")
-                        color: Theme.onScrim
+                        color: Theme.textOnScrim
                         opacity: 0.75
                         font.pixelSize: Theme.size.small
                     }

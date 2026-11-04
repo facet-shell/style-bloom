@@ -72,7 +72,7 @@ Item {
             anchors.verticalCenter: parent.verticalCenter
             icon: root.icon
             size: Theme.icon.normal
-            color: Theme.onPrimary
+            color: Theme.textOnPrimary
         }
     }
 

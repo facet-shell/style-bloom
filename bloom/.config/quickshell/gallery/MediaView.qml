@@ -347,7 +347,7 @@ FocusScope {
     // A small label pill on a thumbnail
     component Tag: Rectangle {
         property alias text: tagText.text
-        property color textColor: Theme.onScrim
+        property color textColor: Theme.textOnScrim
 
         implicitWidth: tagText.implicitWidth + 14
         implicitHeight: 22
@@ -385,7 +385,7 @@ FocusScope {
                 Icon {
                     anchors.centerIn: parent
                     icon: "photo_library"
-                    color: Theme.onPrimaryContainer
+                    color: Theme.textOnPrimaryContainer
                 }
             }
 
@@ -721,7 +721,7 @@ FocusScope {
                                         anchors.centerIn: parent
                                         icon: "check"
                                         size: 17
-                                        color: Theme.onPrimary
+                                        color: Theme.textOnPrimary
                                     }
                                 }
                             }

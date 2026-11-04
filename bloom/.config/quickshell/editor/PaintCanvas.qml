@@ -346,7 +346,7 @@ Item {
         width: Math.max(contentWidth + 8, 80)
         color: root.colorOf(role)
         selectionColor: Theme.primaryContainer
-        selectedTextColor: Theme.onPrimaryContainer
+        selectedTextColor: Theme.textOnPrimaryContainer
         font.family: Theme.mono
         font.pixelSize: Math.max(4, Math.round(size * root.scale))
         selectByMouse: true

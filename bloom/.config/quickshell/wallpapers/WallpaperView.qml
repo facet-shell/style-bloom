@@ -238,11 +238,11 @@ ColumnLayout {
                 Icon {
                     icon: root.picked?.kind === "image" ? "image" : root.picked?.kind === "scene" ? "auto_awesome" : "movie"
                     size: 16
-                    color: Theme.onScrim
+                    color: Theme.textOnScrim
                 }
                 StyledText {
                     text: root.picked ? `${root.picked.kind} · ${root.picked.source}` : ""
-                    color: Theme.onScrim
+                    color: Theme.textOnScrim
                     font.pixelSize: Theme.size.tiny
                 }
             }
@@ -278,14 +278,14 @@ ColumnLayout {
                         StyledText {
                             Layout.fillWidth: true
                             text: root.picked?.title ?? ""
-                            color: Theme.onScrim
+                            color: Theme.textOnScrim
                             font.pixelSize: Theme.size.large - 2
                             font.weight: Font.DemiBold
                         }
                         StyledText {
                             Layout.fillWidth: true
                             text: (root.picked?.tags ?? []).join(" · ")
-                            color: Theme.onScrim
+                            color: Theme.textOnScrim
                             opacity: 0.75
                             font.pixelSize: Theme.size.small
                         }
@@ -415,7 +415,7 @@ ColumnLayout {
                                 anchors.bottom: parent.bottom
                                 anchors.margins: Theme.padding.small + 2
                                 text: tile.modelData.title
-                                color: Theme.onScrim
+                                color: Theme.textOnScrim
                                 font.pixelSize: Theme.size.small
                                 font.weight: Font.Medium
                             }
@@ -428,7 +428,7 @@ ColumnLayout {
                                 visible: tile.modelData.kind !== "image"
                                 icon: "play_circle"
                                 size: Theme.icon.small
-                                color: Theme.onScrim
+                                color: Theme.textOnScrim
                             }
 
                             Rectangle {
@@ -446,7 +446,7 @@ ColumnLayout {
 
                                     anchors.centerIn: parent
                                     text: "in use"
-                                    color: Theme.onPrimary
+                                    color: Theme.textOnPrimary
                                     font.pixelSize: Theme.size.tiny - 1
                                 }
                             }

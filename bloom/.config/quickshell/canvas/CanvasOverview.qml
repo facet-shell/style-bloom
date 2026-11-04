@@ -503,12 +503,12 @@ Scope {
                                     Icon {
                                         icon: "desktop_windows"
                                         size: 14
-                                        color: mon.here ? Theme.onPrimaryContainer : Theme.dim
+                                        color: mon.here ? Theme.textOnPrimaryContainer : Theme.dim
                                     }
                                     StyledText {
                                         text: mon.modelData.name
                                         font.pixelSize: Theme.size.tiny
-                                        color: mon.here ? Theme.onPrimaryContainer : Theme.dim
+                                        color: mon.here ? Theme.textOnPrimaryContainer : Theme.dim
                                     }
                                 }
                             }
@@ -653,7 +653,7 @@ Scope {
                                     anchors.centerIn: parent
                                     icon: "open_in_full"
                                     size: parent.g * 0.55
-                                    color: win.resized ? Theme.onPrimary : Theme.text
+                                    color: win.resized ? Theme.textOnPrimary : Theme.text
                                 }
                             }
 

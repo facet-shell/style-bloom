@@ -73,7 +73,7 @@ Rectangle {
                 required property var modelData
                 required property int index
                 readonly property bool picked: index === root.currentIndex
-                readonly property color foreground: picked ? Theme.onPrimaryContainer : area.containsMouse ? Theme.text : Theme.dim
+                readonly property color foreground: picked ? Theme.textOnPrimaryContainer : area.containsMouse ? Theme.text : Theme.dim
 
                 implicitWidth: content.implicitWidth + (root.segmented ? 24 : 32)
                 implicitHeight: root.segmented ? 28 : 34

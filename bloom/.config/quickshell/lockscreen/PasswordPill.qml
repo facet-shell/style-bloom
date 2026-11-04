@@ -82,7 +82,7 @@ Rectangle {
             Icon {
                 anchors.centerIn: parent
                 icon: "local_florist"
-                color: root.mode === "good" ? Theme.onOk : root.mode === "bad" ? Theme.onErrorContainer : Theme.onPrimary
+                color: root.mode === "good" ? Theme.textOnOk : root.mode === "bad" ? Theme.textOnErrorContainer : Theme.textOnPrimary
             }
         }
 
@@ -154,7 +154,7 @@ Rectangle {
                 anchors.centerIn: parent
                 visible: root.mode !== "busy"
                 icon: root.mode === "good" ? "check" : "arrow_forward"
-                color: root.mode === "good" ? Theme.onOk : root.typed ? Theme.onPrimary : Theme.dim
+                color: root.mode === "good" ? Theme.textOnOk : root.typed ? Theme.textOnPrimary : Theme.dim
             }
 
             // Its own icon, so the arrow never comes back turned
@@ -162,7 +162,7 @@ Rectangle {
                 anchors.centerIn: parent
                 visible: root.mode === "busy"
                 icon: "progress_activity"
-                color: Theme.onPrimary
+                color: Theme.textOnPrimary
 
                 RotationAnimation on rotation {
                     running: root.mode === "busy" && Theme.animated
@@ -174,7 +174,7 @@ Rectangle {
             }
 
             StateLayer {
-                color: root.typed ? Theme.onPrimary : Theme.text
+                color: root.typed ? Theme.textOnPrimary : Theme.text
                 onClicked: root.submitted()
             }
         }

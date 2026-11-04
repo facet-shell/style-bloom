@@ -6,7 +6,7 @@ import qs.config
 //
 //   StateLayer { onClicked: mouse => … }
 //
-//   color       the wash, Theme.text by default (Theme.onPrimary on a primary fill …)
+//   color       the wash, Theme.text by default (Theme.textOnPrimary on a primary fill …)
 //   radius      follows the parent's radius
 //   disabled    no wash, no clicks
 //   cursorShape PointingHandCursor by default

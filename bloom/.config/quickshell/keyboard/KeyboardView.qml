@@ -105,7 +105,7 @@ FocusScope {
 
     // Light or dark text, whatever the paint under it (c is a color property)
     function inkOn(c) {
-        return c.hslLightness > 0.55 ? Theme.page : Theme.onScrim;
+        return c.hslLightness > 0.55 ? Theme.page : Theme.textOnScrim;
     }
 
     function setAction(text) {
@@ -366,7 +366,7 @@ FocusScope {
             anchors.centerIn: parent
             text: key.spec[0]
             color: root.tab === "colors" ? root.inkOn(key.paint)
-                : key.hasAction ? Theme.onPrimary
+                : key.hasAction ? Theme.textOnPrimary
                 : key.isFn && root.tab === "keys" ? Theme.tertiary
                 : Theme.dim
             font.pixelSize: key.spec[0].length > 2 ? Theme.size.tiny - 1 : Theme.size.normal
@@ -416,7 +416,7 @@ FocusScope {
                 Icon {
                     anchors.centerIn: parent
                     icon: "keyboard"
-                    color: Theme.onPrimaryContainer
+                    color: Theme.textOnPrimaryContainer
                 }
             }
 
@@ -494,7 +494,7 @@ FocusScope {
                 Icon {
                     icon: Keyboard.error !== "" ? "error" : "science"
                     size: Theme.icon.small
-                    color: Keyboard.error !== "" ? Theme.onErrorContainer : Theme.warn
+                    color: Keyboard.error !== "" ? Theme.textOnErrorContainer : Theme.warn
                 }
                 StyledText {
                     id: warning
@@ -502,7 +502,7 @@ FocusScope {
                     Layout.fillWidth: true
                     wrapMode: Text.Wrap
                     font.pixelSize: Theme.size.small
-                    color: Keyboard.error !== "" ? Theme.onErrorContainer : Theme.text
+                    color: Keyboard.error !== "" ? Theme.textOnErrorContainer : Theme.text
                     text: Keyboard.error !== "" ? Keyboard.error
                         : Keyboard.info?.dry ? "Dry run: placeholder data, nothing is sent · the log at the bottom shows the packets"
                         : ""

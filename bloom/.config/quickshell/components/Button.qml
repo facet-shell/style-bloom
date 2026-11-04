@@ -24,9 +24,9 @@ Rectangle {
     property bool disabled: false
     readonly property bool hovered: layer.containsMouse
 
-    readonly property color foreground: variant === "filled" ? Theme.onPrimary
-        : variant === "ok" ? Theme.onOk
-        : variant === "danger" ? Theme.onErrorContainer
+    readonly property color foreground: variant === "filled" ? Theme.textOnPrimary
+        : variant === "ok" ? Theme.textOnOk
+        : variant === "danger" ? Theme.textOnErrorContainer
         : variant === "text" ? Theme.primary
         : Theme.text
 

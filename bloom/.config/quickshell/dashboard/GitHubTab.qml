@@ -317,7 +317,7 @@ Item {
                     Icon {
                         anchors.centerIn: parent
                         icon: problem.status === "unknown" ? "hourglass_top" : problem.status === "missing" ? "terminal" : problem.status === "loggedOut" ? "login" : "cloud_off"
-                        color: problem.status === "error" || problem.orgProblem !== "" ? Theme.onErrorContainer : Theme.text
+                        color: problem.status === "error" || problem.orgProblem !== "" ? Theme.textOnErrorContainer : Theme.text
                     }
                 }
                 ColumnLayout {

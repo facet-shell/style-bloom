@@ -8,11 +8,11 @@ import qs.config
 //   icon        Material Symbols name
 //   size        the button (Theme.control.iconButton, 36); iconSize (Theme.icon.normal)
 //   active      drawn "on": Theme.high behind it, the icon in Theme.text
-//   filled      the main action (play): Theme.primary with the icon in onPrimary; it rounds
+//   filled      the main action (play): Theme.primary with the icon in textOnPrimary; it rounds
 //               into a soft square while `active` (the mockup's play/pause)
 //   tonal       Theme.secondaryContainer behind it
 //   restColor   behind it at rest ("transparent"; Theme.high for media buttons on a card)
-//   iconColor   the icon (Theme.dim at rest, Theme.text hovered or active, onPrimary filled)
+//   iconColor   the icon (Theme.dim at rest, Theme.text hovered or active, textOnPrimary filled)
 //   badge       a dot top right (Badge); badgeRing its ring color
 //   disabled    dimmed, no clicks
 //   signal clicked(mouse); acceptedButtons; a press shrinks it with a spring
@@ -26,7 +26,7 @@ Item {
     property bool filled: false
     property bool tonal: false
     property color restColor: "transparent"
-    property color iconColor: filled ? Theme.onPrimary : active || layer.containsMouse ? Theme.text : Theme.dim
+    property color iconColor: filled ? Theme.textOnPrimary : active || layer.containsMouse ? Theme.text : Theme.dim
     property bool badge: false
     property color badgeRing: Theme.surface
     property bool disabled: false
@@ -71,7 +71,7 @@ Item {
         StateLayer {
             id: layer
 
-            color: root.filled ? Theme.onPrimary : Theme.text
+            color: root.filled ? Theme.textOnPrimary : Theme.text
             disabled: root.disabled
             onClicked: mouse => root.clicked(mouse)
         }

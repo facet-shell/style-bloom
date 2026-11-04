@@ -84,7 +84,7 @@ Rectangle {
             icon: btn.icon
             size: Theme.icon.normal
             fill: btn.active ? 1 : 0
-            color: btn.active ? Theme.onPrimaryContainer
+            color: btn.active ? Theme.textOnPrimaryContainer
                 : btn.danger ? Theme.error
                 : layer.containsMouse ? Theme.text : Theme.dim
         }
@@ -92,7 +92,7 @@ Rectangle {
         StateLayer {
             id: layer
 
-            color: btn.active ? Theme.onPrimaryContainer : Theme.text
+            color: btn.active ? Theme.textOnPrimaryContainer : Theme.text
             onClicked: btn.clicked()
             onContainsMouseChanged: root.setHint(btn.name, containsMouse)
         }

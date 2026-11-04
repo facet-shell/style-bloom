@@ -244,7 +244,7 @@ Item {
                         y: 8
                         width: parent.width - 28
                         text: Claude.question
-                        color: Theme.onPrimaryContainer
+                        color: Theme.textOnPrimaryContainer
                         wrapMode: Text.Wrap
                         elide: Text.ElideNone
                     }
@@ -376,7 +376,7 @@ Item {
                                     wrapMode: TextEdit.Wrap
                                     color: Theme.text
                                     selectionColor: Theme.primaryContainer
-                                    selectedTextColor: Theme.onPrimaryContainer
+                                    selectedTextColor: Theme.textOnPrimaryContainer
                                     font.family: Theme.font
                                     font.pixelSize: block.modelData.kind === "h" ? Theme.size.medium : Theme.size.normal
                                     font.weight: block.modelData.kind === "h" ? Font.Medium : Font.Normal
@@ -413,7 +413,7 @@ Item {
                                         wrapMode: TextEdit.WrapAnywhere
                                         color: Theme.secondary
                                         selectionColor: Theme.primaryContainer
-                                        selectedTextColor: Theme.onPrimaryContainer
+                                        selectedTextColor: Theme.textOnPrimaryContainer
                                         font.family: Theme.mono
                                         font.pixelSize: Theme.size.small
 

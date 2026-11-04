@@ -344,7 +344,7 @@ FocusScope {
                 Icon {
                     anchors.centerIn: parent
                     icon: "movie_edit"
-                    color: Theme.onPrimaryContainer
+                    color: Theme.textOnPrimaryContainer
                 }
             }
 

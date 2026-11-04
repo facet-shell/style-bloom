@@ -52,7 +52,7 @@ ConfigRow {
                         anchors.centerIn: parent
                         icon: spot.modelData[1]
                         size: Theme.icon.small
-                        color: spot.picked ? Theme.onPrimaryContainer : Theme.dim
+                        color: spot.picked ? Theme.textOnPrimaryContainer : Theme.dim
                     }
 
                     StateLayer {

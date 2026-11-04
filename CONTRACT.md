@@ -70,7 +70,7 @@ For the code:
 - **Theme tokens only**: no hex colors, font names, durations or radii in a part. The only
   exceptions are pictures' own colors (album art, app icons, avatars) and `#ffffff` on such
   pictures. Missing a token? Add it to the template.
-- **Material names**: use `Theme.surface`, `container`, `high`, `primary`, `onPrimary` …; the
+- **Material names**: use `Theme.surface`, `container`, `high`, `primary`, `textOnPrimary` …; the
   tui names (`bg`, `surface2`, `textDim`, `accent`, `danger`, `frame`, `border`) exist only
   for core and copied tui code.
 - **Motion**: everything that arrives or moves uses `Anim` (emphasized decelerate) or the
@@ -141,18 +141,18 @@ without them gets tones made from its colors by `palette_tones` in cli/facet).
 | `container` | cards, pills on the surface, the search field, notifications |
 | `high` | controls on a card, hover on container, slider tracks |
 | `highest` | hover on high, menu rows' hover |
-| `primary` / `onPrimary` | the accent: filled buttons, switch on, slider fill, today, the clock on the lockscreen |
-| `primaryContainer` / `onPrimaryContainer` | the picked tab or segment, the GoXLR icon circle, the question bubble |
+| `primary` / `textOnPrimary` | the accent: filled buttons, switch on, slider fill, today, the clock on the lockscreen |
+| `primaryContainer` / `textOnPrimaryContainer` | the picked tab or segment, the GoXLR icon circle, the question bubble |
 | `secondary` | secondary accent text (weather hours, code) |
 | `secondaryContainer` | the picked list row, chip, nav entry, launcher selection |
 | `tertiary` | dots and badges, weather icon, Claude |
 | `text` / `dim` | text and secondary text, icons at rest are `dim` |
 | `outline` | lines, switch off, separators |
-| `ok` / `okContainer` / `onOk` | answer, success, CI ok, talking ring |
-| `error` / `errorContainer` / `onErrorContainer` | power, decline, muted, failed |
+| `ok` / `okContainer` / `textOnOk` | answer, success, CI ok, talking ring |
+| `error` / `errorContainer` / `textOnErrorContainer` | power, decline, muted, failed |
 | `warn` | the theme's warn color |
 | `hover` / `press` | state-layer washes (text at 8 % / 12 %) |
-| `scrim` / `onScrim` | the see-through pill in a game, white text on it |
+| `scrim` / `textOnScrim` | the see-through pill in a game, white text on it |
 | `shadowColor` | drop shadows of floating things (popups, menus) |
 | `mix(a, b, t)`, `alpha(c, a)` | color helpers for the odd derived shade |
 | `dynamic` | true while colors come from the wallpaper (`Config.colorMode` "dynamic" and the file exists) |

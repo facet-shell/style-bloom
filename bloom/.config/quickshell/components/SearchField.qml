@@ -66,7 +66,7 @@ Rectangle {
                 verticalAlignment: TextInput.AlignVCenter
                 color: Theme.text
                 selectionColor: Theme.primaryContainer
-                selectedTextColor: Theme.onPrimaryContainer
+                selectedTextColor: Theme.textOnPrimaryContainer
                 font.family: Theme.font
                 font.pixelSize: Theme.size.medium
                 font.weight: Font.Medium

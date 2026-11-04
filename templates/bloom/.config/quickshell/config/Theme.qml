@@ -85,9 +85,9 @@ Singleton {
     readonly property color highest: tones.highest
     // The accent and what sits on it; primaryContainer for selected tabs and segments
     readonly property color primary: tones.primary
-    readonly property color onPrimary: tones.onPrimary
+    readonly property color textOnPrimary: tones.onPrimary
     readonly property color primaryContainer: tones.primaryContainer
-    readonly property color onPrimaryContainer: tones.onPrimaryContainer
+    readonly property color textOnPrimaryContainer: tones.onPrimaryContainer
     readonly property color secondary: tones.secondary
     // Selected list rows, chips and nav entries
     readonly property color secondaryContainer: tones.secondaryContainer
@@ -98,10 +98,10 @@ Singleton {
     readonly property color outline: tones.outline
     readonly property color ok: tones.ok
     readonly property color okContainer: tones.okContainer
-    readonly property color onOk: "#0b2814"
+    readonly property color textOnOk: "#0b2814"
     readonly property color error: tones.error
     readonly property color errorContainer: tones.errorContainer
-    readonly property color onErrorContainer: "#ffdad6"
+    readonly property color textOnErrorContainer: "#ffdad6"
     readonly property color warn: "{{colors.warn}}"
 
     // Hover and press washes over anything (state layers)
@@ -109,7 +109,7 @@ Singleton {
     readonly property color press: alpha(text, 0.12)
     // In a game: see-through pills over the picture, white text on them
     readonly property color scrim: Qt.rgba(8 / 255, 8 / 255, 12 / 255, 0.55)
-    readonly property color onScrim: "#ffffff"
+    readonly property color textOnScrim: "#ffffff"
     readonly property color shadowColor: Qt.rgba(0, 0, 0, 0.55)
 
     // ── tui names, for core (services/Editor.qml) and copied tui code ──
@@ -120,7 +120,6 @@ Singleton {
     readonly property color accent: tertiary
     readonly property color textDim: dim
     readonly property color muted: mix(dim, surface, 0.35)
-    readonly property color frame: outline
     readonly property color border: outline
     readonly property color danger: error
 
