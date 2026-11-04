@@ -6,7 +6,7 @@ import qs.components
 import qs.config
 import qs.services
 
-// The AULA F75 app (Super+K): lighting, Fn keys and per-key colors (KeyboardView), a rounded
+// The keyboard app (Super+K): lighting, Fn keys and per-key colors (KeyboardView), a rounded
 // window in the middle of the hole over the dimmed desktop. The Keyboard service and
 // frame-keyboard (keyboard package) do the work.
 // `qs ipc call keyboard toggle`, also open and close; `mods` comes from Hyprland while

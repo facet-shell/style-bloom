@@ -4,8 +4,9 @@ import qs.components
 import qs.config
 import qs.services
 
-// The keyboard app's content: the device and three tabs on top (lighting, fn keys, colors),
-// the F75 drawn with round keys, the tab's controls, and what the last command sent (in a dry
+// The keyboard app's content: the device and the tabs the board can do on top (lighting, fn
+// keys, colors), the picked board drawn with round keys (its rows come from the board registry,
+// frame-keyboard board --json), the tab's controls, and what the last command sent (in a dry
 // run: would have sent). Keys carry their physical id (US names) and a QWERTZ label.
 FocusScope {
     id: root
@@ -30,11 +31,14 @@ FocusScope {
     property string paintColor: Theme.primary.toString()
     property int keyBrightness: 4
 
-    readonly property int unit: 48
+    // Key size: 48 px, smaller for boards wider than the window (a full-size F99)
+    readonly property real rowUnits: Math.max(1, ...keyRows.map(r => r.reduce((sum, k) => sum + k[2], 0)))
+    readonly property int unit: Math.max(28, Math.min(48, Math.floor((width - 80) / rowUnits)))
     readonly property int gap: 5
 
-    // [label, physical key id, width in keys]; an empty id is a gap
-    readonly property var keyRows: [
+    // [label, physical key id, width in keys] from the board file; the AULA F75 until it is read
+    readonly property var keyRows: Keyboard.keyRows.length > 0 ? Keyboard.keyRows : fallbackRows
+    readonly property var fallbackRows: [
         [["esc", "esc", 1], ["", "", 0.5], ["F1", "f1", 1], ["F2", "f2", 1], ["F3", "f3", 1], ["F4", "f4", 1], ["", "", 0.5],
          ["F5", "f5", 1], ["F6", "f6", 1], ["F7", "f7", 1], ["F8", "f8", 1], ["", "", 0.5],
          ["F9", "f9", 1], ["F10", "f10", 1], ["F11", "f11", 1], ["F12", "f12", 1], ["", "", 0.5], ["◉", "knob", 1]],
@@ -421,7 +425,7 @@ FocusScope {
                 spacing: 0
 
                 StyledText {
-                    text: "AULA F75"
+                    text: Keyboard.boardName
                     font.pixelSize: Theme.size.medium
                     font.weight: Font.Medium
                 }
@@ -429,19 +433,20 @@ FocusScope {
                     Layout.fillWidth: true
                     dim: true
                     font.pixelSize: Theme.size.small
-                    text: !Keyboard.available ? "frame-keyboard is not in ~/.local/bin (docs/keyboard.md)"
+                    text: !Keyboard.available ? "frame-keyboard is not in ~/.local/bin (facet add keyboard)"
                         : Keyboard.connected ? `usb cable${Keyboard.info?.node ? " · " + Keyboard.info.node : ""}`
                         : Keyboard.dongleOnly ? "only the 2.4 GHz dongle is there · plug the cable in"
-                        : "no AULA F75 on the USB cable"
+                        : "not on the USB cable · another board: facet keyboard set"
                 }
             }
 
             Tabs {
+                // Only what the board can do
                 model: [
-                    { key: "lighting", label: "Lighting", icon: "light_mode" },
-                    { key: "keys", label: "Fn keys", icon: "keyboard_command_key" },
-                    { key: "colors", label: "Colors", icon: "palette" }
-                ]
+                    { key: "lighting", label: "Lighting", icon: "light_mode", on: Keyboard.can.effects },
+                    { key: "keys", label: "Fn keys", icon: "keyboard_command_key", on: Keyboard.can.fn },
+                    { key: "colors", label: "Colors", icon: "palette", on: Keyboard.can.perkey }
+                ].filter(t => t.on)
                 current: root.tab
                 onSelected: key => {
                     root.tab = key;
@@ -580,8 +585,8 @@ FocusScope {
                 Steps {
                     Layout.fillWidth: true
                     title: "brightness"
-                    max: 9
-                    value: root.brightness
+                    max: Keyboard.can.brightness ?? 9
+                    value: Math.min(root.brightness, max)
                     onPicked: v => root.brightness = v
                 }
 
@@ -589,8 +594,8 @@ FocusScope {
                     Layout.fillWidth: true
                     visible: root.effectSpec?.speed ?? false
                     title: "speed"
-                    max: 4
-                    value: root.speed
+                    max: Keyboard.can.speed ?? 4
+                    value: Math.min(root.speed, max)
                     onPicked: v => root.speed = v
                 }
 
@@ -690,6 +695,7 @@ FocusScope {
                     }
                     SegmentedButtons {
                         model: [{ key: "fn1", label: "with fn" }, { key: "fn2", label: "fn 2" }, { key: "base", label: "without fn" }]
+                            .filter(l => (Keyboard.can.layers ?? []).includes(l.key))
                         current: Keyboard.layer
                         onSelected: key => {
                             root.selected = "";
@@ -769,7 +775,7 @@ FocusScope {
                     font.pixelSize: Theme.size.small
                     text: Keyboard.layer === "base"
                         ? "Without fn: this changes what the key does normally"
-                        : "Lit keys do something together with fn · factory puts the AULA default back"
+                        : "Lit keys do something together with fn · factory puts the maker's default back"
                 }
             }
 
@@ -866,8 +872,8 @@ FocusScope {
                 Steps {
                     Layout.fillWidth: true
                     title: "brightness"
-                    max: 9
-                    value: root.keyBrightness
+                    max: Keyboard.can.brightness ?? 9
+                    value: Math.min(root.keyBrightness, max)
                     onPicked: v => root.keyBrightness = v
                 }
 
