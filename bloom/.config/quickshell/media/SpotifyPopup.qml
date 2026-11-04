@@ -76,8 +76,8 @@ Scope {
         if (!spotify || spotify.trackTitle === "" || key === lastTrack)
             return;
         lastTrack = key;
-        // Skipped from the dashboard's media card: you are looking at it already
-        if (Spotify.cardOpen || blocked || hidden)
+        // Skipped from the dashboard's media card or in Spotify itself: you are looking at it already
+        if (Spotify.cardOpen || Spotify.windowFocused || blocked || hidden)
             return;
         // Game mode and the bell, as the rules say
         if (!Notifications.allows("sp.song"))
@@ -120,6 +120,10 @@ Scope {
     onBlockedChanged: if (blocked)
         fold()
     onHiddenChanged: if (hidden)
+        fold()
+    // Switching to Spotify while it is out: Spotify shows the song itself
+    readonly property bool inSpotify: Spotify.windowFocused
+    onInSpotifyChanged: if (inSpotify)
         fold()
 
     Connections {
