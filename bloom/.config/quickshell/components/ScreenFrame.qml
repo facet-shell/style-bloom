@@ -290,6 +290,14 @@ Scope {
                         id: barHover
                     }
 
+                    // Its own background while it peeks: the frame, whose top edge is the bar's
+                    // background otherwise, is not drawn over a fullscreen window
+                    Rectangle {
+                        anchors.fill: parent
+                        visible: window.overFullscreen
+                        color: root.color
+                    }
+
                     Loader {
                         anchors.fill: parent
                         sourceComponent: root.bar
