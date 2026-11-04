@@ -1,6 +1,7 @@
 import QtQuick
 import QtQuick.Shapes
 import Quickshell
+import Quickshell.Hyprland
 import Quickshell.Wayland
 import qs.config
 
@@ -33,6 +34,26 @@ Scope {
     property bool hidden: false
     property color color: Theme.surface
     readonly property bool away: hidden || Bloom.frameAway
+
+    // Fullscreen (or only maximized, which leaves the bar in sight) is only in hyprctl clients
+    // (lastIpcObject); read it again when it can change, for the bar over fullscreen windows
+    Connections {
+        target: Hyprland
+        enabled: Config.barOverFullscreen
+        function onRawEvent(event) {
+            if (["fullscreen", "workspacev2", "focusedmonv2", "openwindow", "closewindow", "movewindowv2"].includes(event.name))
+                fullscreenRead.restart();
+        }
+    }
+
+    Timer {
+        id: fullscreenRead
+        interval: 50
+        onTriggered: {
+            Hyprland.refreshWorkspaces();
+            Hyprland.refreshToplevels();
+        }
+    }
 
     // An empty layer that only reserves space along one edge
     component Zone: PanelWindow {
@@ -68,14 +89,63 @@ Scope {
 
             required property ShellScreen modelData
 
-            // Game mode with the frame away: the mouse at the top edge brings the bar back over
-            // the game for a while (the frame and its zones stay away, the game keeps the screen)
-            property bool peek: false
-            readonly property bool canPeek: Bloom.frameAway && !root.hidden
-            onCanPeekChanged: if (!canPeek)
-                peek = false
+            readonly property HyprlandMonitor monitor: Hyprland.monitorFor(modelData)
 
-            // A 1 px strip along the top, above the game, only while the bar is away
+            // A window covers this screen fullscreen (a maximized one leaves the bar in sight);
+            // the frame sits on the Top layer, under it. Same reading as tui's bar.
+            readonly property bool fullscreen: {
+                const ws = monitor?.activeWorkspace;
+                if (!ws?.hasFullscreen)
+                    return false;
+                const modes = ws.toplevels.values.map(t => t.lastIpcObject?.fullscreen).filter(f => f !== undefined);
+                // Not read from hyprctl yet: the workspace's word is enough
+                return modes.length === 0 || modes.some(f => f === true || (Number(f) & 2) !== 0);
+            }
+
+            // Over a fullscreen window, or with the frame away in game mode, resting the mouse on
+            // the top edge brings the bar down on the Overlay layer (Config.barOverFullscreen, as
+            // tui's bar does); the frame stays out of it and the window keeps the screen
+            readonly property bool canPeek: Config.barOverFullscreen && !root.hidden && (fullscreen || Bloom.frameAway)
+            property bool peek: false
+            onCanPeekChanged: if (!canPeek) {
+                peek = false;
+                peekOpen.stop();
+                peekClose.stop();
+            }
+            // The bar is held while the mouse is on it or a drawer of it is out
+            readonly property bool held: barHover.hovered || Bloom.inset(modelData.name, "top") > 0
+            onHeldChanged: {
+                if (held) {
+                    peekClose.stop();
+                } else if (peek) {
+                    peekClose.interval = 400;
+                    peekClose.restart();
+                }
+            }
+
+            // Passing by does not count, the mouse has to rest on the edge
+            Timer {
+                id: peekOpen
+                interval: 280
+                onTriggered: {
+                    if (!perScreen.canPeek)
+                        return;
+                    perScreen.peek = true;
+                    // Goes up again if the mouse never reaches the bar
+                    if (!perScreen.held) {
+                        peekClose.interval = 1200;
+                        peekClose.restart();
+                    }
+                }
+            }
+            Timer {
+                id: peekClose
+                interval: 400
+                onTriggered: perScreen.peek = false
+            }
+
+            // Hot edge: 1 px along the top, above the fullscreen window or game, only while the
+            // bar is out of sight; no keyboard focus, too thin to be in the way
             PanelWindow {
                 screen: perScreen.modelData
                 visible: perScreen.canPeek && !perScreen.peek
@@ -92,16 +162,13 @@ Scope {
                 }
 
                 HoverHandler {
-                    onHoveredChanged: if (hovered)
-                        perScreen.peek = true
+                    onHoveredChanged: {
+                        if (hovered)
+                            peekOpen.restart();
+                        else
+                            peekOpen.stop();
+                    }
                 }
-            }
-
-            // Back up once the mouse left the bar, not while a drawer of the bar is out
-            Timer {
-                interval: 800
-                running: perScreen.peek && !barHover.hovered && Bloom.inset(perScreen.modelData.name, "top") <= 0
-                onTriggered: perScreen.peek = false
             }
 
             Zone {
@@ -178,7 +245,8 @@ Scope {
                 // The surface everywhere but the hole (even-odd: the hole cuts out)
                 Shape {
                     anchors.fill: parent
-                    opacity: window.presence
+                    // Not while the bar peeks: over a fullscreen window only the bar comes
+                    opacity: perScreen.peek ? 0 : window.presence
                     preferredRendererType: Shape.CurveRenderer
 
                     ShapePath {
