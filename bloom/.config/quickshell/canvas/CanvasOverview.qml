@@ -371,8 +371,13 @@ Scope {
         readonly property bool away: Bloom.frameAway
         readonly property real holeX: away ? 0 : Theme.frame.border
         readonly property real holeY: away ? 0 : Theme.frame.bar
-        readonly property real holeW: width - 2 * holeX
-        readonly property real holeH: height - holeY - (away ? 0 : Theme.frame.border)
+        // From the screen, not the window: show() fits the zoom right after visible = true,
+        // before the compositor sized the surface (it reads a 500x500 placeholder then, which
+        // gave a negative zoom: a mirrored map with every window off screen)
+        readonly property real fullW: screen?.width ?? width
+        readonly property real fullH: screen?.height ?? height
+        readonly property real holeW: fullW - 2 * holeX
+        readonly property real holeH: fullH - holeY - (away ? 0 : Theme.frame.border)
         readonly property real holeR: away ? 0 : Math.min(Theme.rounding.hole, holeW / 2, holeH / 2)
 
         visible: false
