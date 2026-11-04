@@ -1,27 +1,55 @@
 import QtQuick
 import Quickshell
 import Quickshell.Io
+import Quickshell.Wayland
+import qs.components
 import qs.config
 import qs.services
 
-// STUB (wallpapers part): the wallpaper app (Super+W). In bloom it is the launcher's big
-// wallpaper menu grown out of the bottom edge (the mockup's .wbig: a large preview with
-// "apply", tabs All / Still / Moving / Folders, a grid of rounded tiles, fit, moving ones,
-// pause in games, "colors from it" = Config.colorMode "dynamic"). The Wallpapers service and
-// frame-wallpaper do the work; Backdrop.qml next to this is tui's and already draws the still
-// wallpapers. tui's wallpapers/WallpaperView.qml has the app to port.
-// Keep: open, show(), hide() and the IPC target "wallpapers".
+// The wallpaper app (Super+W): the launcher's big wallpaper menu as its own drawer out of the
+// bottom edge. A large preview with "apply", tabs and a grid of tiles beside it, the backend's
+// options under them (WallpaperView). The Wallpapers service and frame-wallpaper do the work;
+// Backdrop.qml next to this draws the still ones.
+// `qs ipc call wallpapers toggle`, also open and close.
 Scope {
     id: root
 
     property bool open: false
+    property ShellScreen screen: null
 
     function show() {
-        console.warn("bloom: the wallpaper app is not built yet (wallpapers/WallpaperApp.qml)");
+        if (open)
+            return;
+        screen = Bloom.focusedScreen;
+        open = true;
+        view.reset();
     }
 
     function hide() {
         open = false;
+    }
+
+    Drawer {
+        screen: root.screen
+        edge: "bottom"
+        open: root.open
+        namespace: "qs-wallpapers"
+        // Opened on purpose (Super+W), so it shows over a fullscreen window too
+        windowLayer: WlrLayer.Overlay
+        // The search field takes typing
+        keyboard: WlrKeyboardFocus.Exclusive
+        onDismissed: root.hide()
+
+        WallpaperView {
+            id: view
+
+            anchors.fill: parent
+            // As wide as the mockup's big menu, narrower on small screens; the joints and the
+            // hole's corners stay free
+            implicitWidth: Math.min(1180, (root.screen?.width ?? 1920) - Theme.frame.border * 2
+                - (Theme.rounding.fillet + Theme.rounding.hole) * 2 - Theme.padding.drawer * 2)
+            onCloseRequested: root.hide()
+        }
     }
 
     IpcHandler {

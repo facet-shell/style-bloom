@@ -21,8 +21,9 @@ how a part behaves in a game, and the rules. Read this, the mockup
   template, never the generated file. Placeholders are `{{tones.primary}}`,
   `{{colors.warn}}`, `{{fonts.mono}}` (cli/facet, `render_template`).
 - `facet style bloom` unlinks tui's package and links this one; `facet style tui` goes back.
-  Login, boot splash and GRUB keep coming from style-tui until bloom has its own
-  (`screens_style` in cli/facet).
+  Login, boot splash and GRUB come from the style in use: bloom has its own (greeter/ with a
+  file list in greeter/files, templates/grub and templates/plymouth with images.sh drawing the
+  pictures); `screens_style` in cli/facet falls back to tui for a style without them.
 - `shell.qml` starts with `Core {}`, then the bar and every part. It only wires parts together;
   a part never reaches into another part's files.
 
@@ -284,6 +285,9 @@ HolePopup {
 | `osdCompactInGame` | `true` | 〃 |
 | `voiceOverlayCompactInGame` | `true` | 〃 |
 | `panelsCompactInGame` | `true` | panels open smaller in a game |
+| `githubOrgs` | `["facet-shell"]` | the organisations in the dashboard's GitHub menu |
+| `recordIndicator` | `true` | the recording pill (`qs-recording`) |
+| `recordIndicatorPosition` | `"top-left"` | where it sits |
 
 Existing keys bloom uses as they are: `notificationPosition`, `notificationStyle`,
 `notificationWidth`, `notificationTimeout`, `notificationsMax`, `spotifyPosition`,

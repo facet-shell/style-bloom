@@ -5,9 +5,9 @@ import Quickshell.Io
 import Quickshell.Wayland
 import qs.config
 
-// Session lock with a blurred snapshot of the desktop behind it: tui's, unchanged but for this
-// comment. The lockscreen part restyles LockSurface.qml (and may rework this file, keeping the
-// IPC, aboutToLock, active, the idle and sleep handling).
+// Session lock with a blurred snapshot of the desktop behind it: tui's logic, unchanged. The
+// bloom look is LockSurface.qml (clock, pill, music, notes, weather); its unlock animation
+// fits in the release delay below (Theme.anim.slow).
 //
 // `qs ipc call lock lock` (Super+L, hypridle) runs:
 //   1. aboutToLock() and `active`, so the bar and open panels leave the screen (400 ms)

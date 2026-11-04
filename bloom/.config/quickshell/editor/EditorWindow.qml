@@ -1,34 +1,97 @@
 import QtQuick
 import Quickshell
 import Quickshell.Io
+import qs.components
 import qs.config
 import qs.services
 
-// STUB (editor part): the editors for recordings and pictures as their own window, opened
-// through the Editor service ("edit" on a notification, the media app, `qs ipc call editor
-// open <file>`). In bloom: a rounded window on Theme.surface, tools as IconButtons and Chips,
-// the timeline on Theme.container. tui's editor/ has both editors to port (EditorView,
-// ImageEditorView, the projects, the timeline).
-// Keep: open, file, openFile(path), hide() and the IPC target "editor".
+// The editors as their own window on the dark page, their parts as rounded panels: a video
+// (EditorView: cuts, blur boxes, pictures, levels per channel on a timeline) or a picture
+// (ImageEditorView: blur boxes, pictures, drawing, crop). Opened through the Editor service:
+// "edit" on a notification, the media app, or `qs ipc call editor open <file>`;
+// `qs ipc call editor paint` (or paintOn theme|white|clear) opens an empty page.
+// The views come in through a Loader, so without Qt Multimedia (qt6-multimedia-ffmpeg) only
+// the video editor is missing and it says so.
 Scope {
     id: root
 
     property bool open: false
     property string file: ""
+    readonly property string view: Editor.isVideo(file) ? "EditorView.qml" : "ImageEditorView.qml"
 
     function openFile(path) {
+        if (path === "")
+            return;
+        if (loader.item)
+            loader.item.project.writeNow();
         file = path;
-        console.warn(`bloom: the editor is not built yet (editor/EditorWindow.qml): ${path}`);
+        open = true;
+        // The same kind of view takes the new file; the other kind loads with it
+        if (loader.item && loader.source.toString().endsWith(view))
+            loader.item.openFile(path);
     }
 
     function hide() {
+        if (loader.item) {
+            loader.item.pause();
+            loader.item.project.writeNow();
+        }
         open = false;
     }
 
     Connections {
         target: Editor
+
         function onOpenRequested(file) {
             root.openFile(file);
+        }
+    }
+
+    FloatingWindow {
+        id: window
+
+        visible: root.open
+        title: Editor.isVideo(root.file) ? "frameshell · video editor"
+            : root.file.includes("/paintings/") ? "frameshell · paint" : "frameshell · picture editor"
+        implicitWidth: 1480
+        implicitHeight: 940
+        color: Theme.page
+
+        // Closed from Hyprland (Super+Q) instead of the close button
+        onVisibleChanged: {
+            if (!visible && root.open)
+                root.hide();
+        }
+
+        Loader {
+            id: loader
+
+            anchors.fill: parent
+            active: root.open
+            source: root.view
+            // The content arrives with a short fade instead of popping in
+            opacity: status === Loader.Ready ? 1 : 0
+            onLoaded: {
+                item.closeRequested.connect(root.hide);
+                item.openFile(root.file);
+            }
+            onStatusChanged: {
+                if (status !== Loader.Error)
+                    return;
+                root.open = false;
+                Notifications.push({
+                    app: "editor",
+                    glyph: "✗",
+                    title: "the editor did not start",
+                    body: Editor.isVideo(root.file)
+                        ? "videos need Qt Multimedia: sudo pacman -S qt6-multimedia-ffmpeg"
+                        : "see qs log for the error"
+                });
+            }
+
+            Behavior on opacity {
+                Anim {}
+            }
         }
     }
 

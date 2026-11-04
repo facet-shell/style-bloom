@@ -3,13 +3,9 @@ import Quickshell
 import Quickshell.Io
 import qs.config
 
-// STUB (settings part): the settings as their own window (Super+,), in bloom a rounded window
-// with the nav on the left (Look, Notifications, Popups, Games, Sound, System) like the
-// mockup's #settings: themes as swatch cards plus "From the wallpaper" (Config.colorMode),
-// corners and animations (Config.corners, Config.animations), per popup its size and
-// "compact in a game" (CONTRACT.md lists the keys), the notification rules, the game list.
-// tui's settings/SettingsView.qml has every setting to port.
-// Keep: open, show(section), hide(), the two signals and the IPC target "settings".
+// The settings as their own window: Super+, or "settings" in the control center,
+// `qs ipc call settings toggle`, `qs ipc call settings section sound`. The content is
+// SettingsView: the sections as pills on the left, their rows on the right.
 Scope {
     id: root
 
@@ -19,11 +15,43 @@ Scope {
     signal keyboardRequested()
 
     function show(section) {
-        console.warn(`bloom: the settings are not built yet (settings/SettingsApp.qml)${section ? ", section " + section : ""}`);
+        if (section)
+            view.section = view.sectionFor(section);
+        open = true;
+        view.refresh();
+        view.forceActiveFocus();
     }
 
     function hide() {
         open = false;
+    }
+
+    FloatingWindow {
+        id: window
+
+        visible: root.open
+        title: "facet · settings"
+        implicitWidth: 1120
+        implicitHeight: 760
+        color: Theme.surface
+
+        // Closed from Hyprland (Super+Q) instead of the close button
+        onVisibleChanged: {
+            if (!visible && root.open)
+                root.hide();
+            else if (visible)
+                view.arrive();
+        }
+
+        SettingsView {
+            id: view
+
+            anchors.fill: parent
+            focus: true
+            onCloseRequested: root.hide()
+            onWallpapersRequested: root.wallpapersRequested()
+            onKeyboardRequested: root.keyboardRequested()
+        }
     }
 
     IpcHandler {
