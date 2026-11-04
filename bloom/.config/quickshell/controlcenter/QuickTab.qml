@@ -8,7 +8,8 @@ import qs.config
 import qs.services
 
 // The control center's Quick tab: tiles that spring between round (off) and squarer (on),
-// the volume and brightness sliders, and the way to the other apps.
+// the volume and brightness sliders, the channels (GoXLR or virtual) when there are some,
+// and the way to the other apps.
 ColumnLayout {
     id: root
 
@@ -194,6 +195,102 @@ ColumnLayout {
                 GoXLR.setChannelVolume("System", v * 100);
             else
                 Audio.setVolume(Audio.defaultSink, v);
+        }
+    }
+
+    // ── Channels ─────────────────────────────────────────────
+
+    // One line per channel, like tui's faders: the GoXLR's faders (levels follow the
+    // hardware, the mute works from here), or the virtual channels from `facet audio channels
+    // on` (a slider and a mute each, then the real output they play into). Not there
+    // without either.
+    Card {
+        id: channels
+
+        readonly property bool goxlrFaders: GoXLR.available && GoXLR.faders.length > 0
+        readonly property var rows: goxlrFaders
+            ? GoXLR.faders.map(f => ({ key: f.key, label: f.label, node: null }))
+            : Audio.virtualActive
+            ? Audio.virtualChannels.map(c => ({ key: c.key, label: c.label, node: c.node }))
+                .concat(Audio.masterOutput ? [{ key: "output", label: "Output", node: Audio.masterOutput }] : [])
+            : []
+        readonly property var icons: ({ system: "desktop_windows", game: "sports_esports", chat: "forum", music: "music_note", mic: "mic", sample: "graphic_eq", output: "speaker" })
+
+        Layout.fillWidth: true
+        visible: rows.length > 0
+        padding: Theme.padding.normal
+
+        ColumnLayout {
+            anchors.fill: parent
+            spacing: Theme.spacing.small
+
+            StyledText {
+                text: channels.goxlrFaders ? "GoXLR faders" : "Channels"
+                dim: true
+                font.pixelSize: Theme.size.tiny
+            }
+
+            Repeater {
+                model: channels.rows
+
+                delegate: RowLayout {
+                    id: channelRow
+
+                    required property var modelData
+                    readonly property var fader: channels.goxlrFaders ? GoXLR.state(modelData.key) : null
+                    readonly property real level: fader ? fader.level / 100 : (modelData.node?.audio?.volume ?? 0)
+                    readonly property bool muted: fader ? fader.muted : (modelData.node?.audio?.muted ?? false)
+
+                    Layout.fillWidth: true
+                    spacing: Theme.spacing.normal
+
+                    Icon {
+                        icon: channels.icons[channelRow.modelData.key] ?? "volume_up"
+                        size: Theme.icon.small
+                        dim: true
+                    }
+                    StyledText {
+                        Layout.preferredWidth: 64
+                        text: channelRow.modelData.label.charAt(0).toUpperCase() + channelRow.modelData.label.slice(1)
+                        font.pixelSize: Theme.size.small
+                    }
+                    // The GoXLR's faders are physical: a meter, not a slider
+                    ProgressBar {
+                        visible: channelRow.fader !== null
+                        Layout.fillWidth: true
+                        value: channelRow.level
+                        color: channelRow.muted ? Theme.outline : Theme.primary
+                    }
+                    Slider {
+                        visible: channelRow.fader === null
+                        Layout.fillWidth: true
+                        thin: true
+                        value: channelRow.level
+                        opacity: channelRow.muted ? 0.5 : 1
+                        onMoved: v => Audio.setVolume(channelRow.modelData.node, v)
+                    }
+                    StyledText {
+                        Layout.preferredWidth: 44
+                        horizontalAlignment: Text.AlignRight
+                        text: channelRow.muted ? "muted" : `${Math.round(channelRow.level * 100)}%`
+                        color: channelRow.muted ? Theme.error : Theme.dim
+                        tabular: true
+                        font.pixelSize: Theme.size.tiny
+                    }
+                    IconButton {
+                        size: 28
+                        iconSize: 16
+                        icon: channelRow.muted ? "volume_off" : "volume_up"
+                        iconColor: channelRow.muted ? Theme.error : hovered ? Theme.text : Theme.dim
+                        onClicked: {
+                            if (channelRow.fader !== null)
+                                GoXLR.setMuted(channelRow.modelData.key, !channelRow.muted);
+                            else
+                                Audio.toggleMute(channelRow.modelData.node);
+                        }
+                    }
+                }
+            }
         }
     }
 

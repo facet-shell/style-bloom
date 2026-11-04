@@ -2,6 +2,7 @@ import QtQuick
 import QtQuick.Layouts
 import qs.components
 import qs.config
+import qs.services
 
 // Apps: the facet modules (update what is there, add what is not, each in a terminal) and the
 // settings of the apps around the shell: Spotify's Web API, the keyboard, the GoXLR lights.
@@ -103,7 +104,9 @@ ColumnLayout {
         title: "Keyboard live"
         subtitle: "off: the keyboard app only shows what it would send"
     }
+    // Only where a GoXLR answers
     ConfigRow {
+        visible: GoXLR.available
         title: "GoXLR lights"
         subtitle: "faders, buttons and the animation in the theme's colors"
         icon: "tune"

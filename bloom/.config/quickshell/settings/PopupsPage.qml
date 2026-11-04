@@ -100,7 +100,7 @@ ColumnLayout {
     // ── OSD ──
 
     PageHeading {
-        text: "GoXLR faders and volume"
+        text: "Volume, faders and channels"
     }
     ConfigSize {
         key: "osdSize"

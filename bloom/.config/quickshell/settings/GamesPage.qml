@@ -5,7 +5,7 @@ import qs.config
 import qs.services
 
 // Games: when game mode comes on by itself, what it does (quiet, the frame steps away), which
-// apps count as games, and the GoXLR profile while playing.
+// apps count as games, and the GoXLR profile while playing (only with a GoXLR).
 ColumnLayout {
     id: page
 
@@ -54,10 +54,22 @@ ColumnLayout {
 
     GameList {}
 
+    // Only with a GoXLR to load it on (or one set before)
     ConfigText {
+        visible: GoXLR.available || Audio.goxlr || Config.isSet("goxlrGameProfile")
         key: "goxlrGameProfile"
         title: "GoXLR profile while playing"
         subtitle: "the one before comes back after; empty: none"
         placeholder: "e.g. Gaming"
+    }
+
+    StyledText {
+        Layout.fillWidth: true
+        visible: Audio.virtualActive && Audio.outputRoutes.includes("game")
+        text: "The game's sound goes on the Game channel (the @game rule under Sound)."
+        dim: true
+        font.pixelSize: Theme.size.small
+        wrapMode: Text.WordWrap
+        elide: Text.ElideNone
     }
 }

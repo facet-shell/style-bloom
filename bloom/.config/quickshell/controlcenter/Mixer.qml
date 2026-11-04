@@ -6,7 +6,8 @@ import qs.config
 import qs.services
 
 // The control center's App mixer, tui's mixer in the bloom look: every app with its own
-// volume and mute. With a GoXLR each app shows its channel as a chip, a click moves it to
+// volume and mute. With a GoXLR (or the virtual channels from facet audio channels on) each
+// app shows its channel as a chip, a click moves it to
 // the next channel. Without one apps move between the machine's own outputs and inputs
 // (the chip opens the device list) and the default devices sit on top as master rows.
 // Apps that play right now come first, idle ones are dimmed below; the list scrolls.
@@ -14,6 +15,8 @@ ColumnLayout {
     id: root
 
     readonly property bool goxlr: Audio.goxlr
+    // GoXLR or virtual channels: apps get a channel chip instead of a device list
+    readonly property bool routed: Audio.routed
     // Moving a stream (or a short pause) drops its link for a moment, so the order only
     // follows idle changes after they held a while; new and gone apps show up at once
     readonly property var rawPlayback: sortActive(Audio.playback)
@@ -40,9 +43,10 @@ ColumnLayout {
         return sameSet(a, b) && a.every((n, i) => n === b[i]);
     }
 
-    // "music" → "Music", "chat mic" → "Chat mic"
+    // "music" → "Music", "chat mic" → "Chat mic"; a virtual channel's own label
     function routeLabel(route) {
-        return route === "" ? "not routed" : route.charAt(0).toUpperCase() + route.slice(1);
+        const label = Audio.routeLabel(route);
+        return route === "" ? "not routed" : label.charAt(0).toUpperCase() + label.slice(1);
     }
 
     onRawPlaybackChanged: sameSet(rawPlayback, playback) ? settle.restart() : playback = rawPlayback
@@ -231,8 +235,13 @@ ColumnLayout {
                 visible: master.picking
                 devices: master.devices
                 current: master.device?.name ?? ""
+                // The output goes through Audio.pickOutput: with the virtual channels that
+                // moves the channels to the device, without them it is the default
                 onPicked: device => {
-                    Audio.setDefault(device);
+                    if (master.key === "output")
+                        Audio.pickOutput(device);
+                    else
+                        Audio.setDefault(device);
                     root.picking = null;
                 }
             }
@@ -249,8 +258,11 @@ ColumnLayout {
         // the live values and then only the timer sets them
         readonly property bool idleNow: Audio.isIdle(node)
         property bool idle: false
-        // With a GoXLR the channel key ("music"), without one the device's node name
-        readonly property string routeNow: root.goxlr ? Audio.routeOf(node) : Audio.deviceOf(node)?.name ?? ""
+        // Channel chip: always with a GoXLR (as before), with the virtual channels where the
+        // list has routes (inputs have none there and keep their device list)
+        readonly property bool chips: root.goxlr || (root.routed && routes.length > 0)
+        // With a chip the channel key ("music"), without one the device's node name
+        readonly property string routeNow: chips ? Audio.routeOf(node) : Audio.deviceOf(node)?.name ?? ""
         property string route: ""
         readonly property real volume: node.audio?.volume ?? 0
         readonly property bool muted: node.audio?.muted ?? false
@@ -339,9 +351,9 @@ ColumnLayout {
                         }
                     }
 
-                    // The GoXLR channel: a click moves the app on to the next one
+                    // The channel: a click moves the app on to the next one
                     Chip {
-                        visible: root.goxlr
+                        visible: row.chips
                         compact: true
                         selected: row.route !== ""
                         icon: row.recordingApp ? "mic" : ""
@@ -351,7 +363,7 @@ ColumnLayout {
                     // A paused app has no link and so no device: it plays on the default
                     // one (or the one WirePlumber remembered) once it starts
                     DeviceChip {
-                        visible: !root.goxlr
+                        visible: !row.chips
                         text: row.route === "" ? "default" : Audio.deviceLabel(Audio.deviceByName(row.route))
                         maxWidth: 120
                         open: row.picking
@@ -459,18 +471,20 @@ ColumnLayout {
         dim: true
         font.pixelSize: Theme.size.small
         wrapMode: Text.WordWrap
-        text: !root.goxlr ? "Every app on its output; click the device to move it"
-            : Audio.outputRoutes.length === 0 ? "No GoXLR outputs found · check goxlrOutputs in the settings"
+        text: Audio.virtualActive ? "Every app on its channel; click the channel to move it"
+            : !root.goxlr ? "Every app on its output; click the device to move it"
+            : Audio.outputRoutes.length === 0 ? "No GoXLR outputs found · check goxlrOutputs in shell.json"
             : "Every app on its GoXLR channel; click the channel to move it"
     }
 
-    // Without a GoXLR nothing else sets the overall level
+    // Without a GoXLR nothing else sets the overall level; with the virtual channels the
+    // output is the device they play into
     MasterRow {
         visible: !root.goxlr
         key: "output"
         title: "Output"
-        device: Audio.defaultSink
-        devices: Audio.sinks
+        device: Audio.masterOutput
+        devices: Audio.masterOutputs
     }
     MasterRow {
         visible: !root.goxlr
@@ -546,7 +560,8 @@ ColumnLayout {
         Layout.fillWidth: true
         Layout.topMargin: Theme.spacing.small
         visible: !root.empty
-        text: root.goxlr ? "Routing is remembered per app, so Spotify stays on Music after a restart"
+        text: Audio.virtualActive ? "The channel picked per app is remembered; rules for new apps are in Settings › Sound"
+            : root.goxlr ? "Routing is remembered per app, so Spotify stays on Music after a restart"
             : "The device picked per app is remembered, so it stays there after a restart"
         dim: true
         opacity: 0.7

@@ -8,7 +8,7 @@ how a part behaves in a game, and the rules. Read this, the mockup
 ## 1. How bloom is put together
 
 - **core** (`frame-shell/shell`, repo `facet-shell/core`) holds what every style shares:
-  `services/*` (singletons: Notifications, DiscordBridge, SteamBridge, Spotify, GoXLR, Audio,
+  `services/*` (singletons: Notifications, DiscordBridge, SteamBridge, Spotify, GoXLR, Audio, Channels,
   Toggles, Recorder, Clipboard, Timers, Weather, SystemStats, Tasks, Claude, Updates,
   Wallpapers, CanvasLayout, Binds, Editor, Keyboard, Network …), `services/Core.qml` (startup
   and the media keys), `config/Config.qml` (all settings, the user's changes in
@@ -295,7 +295,9 @@ Existing keys bloom uses as they are: `notificationPosition`, `notificationStyle
 factor), `notifyRules`, `discordMessagesWhen`, `steamMessagesWhen`, `gameModeAuto`,
 `gameClasses`, `gameModeSilent`, `goxlrGameProfile`, `lockBlur`, `idleLockMinutes`,
 `idleScreenOffMinutes`, `weatherLocation`, `barOverFullscreen` (not used by the bloom bar
-yet), the launcher's and GoXLR keys.
+yet), the launcher's and GoXLR keys, and the sound channel keys `audioChannels`,
+`audioRules`, `audioRulesOn` (Audio: `channelSource`, `goxlr`, `virtualActive`, `routed`,
+`virtualChannels`, `masterOutput`, `masterOutputs`, `pickOutput()`; Channels: the app rules).
 
 New service in core: `Network` (`type` "ethernet" / "wifi" / "", `name`, `strength`,
 `online`, `available`), from nmcli.

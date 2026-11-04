@@ -9,9 +9,9 @@ import qs.services
 
 // The control center: a drawer out of the right edge, under the status pill. Tabs: Quick
 // (tiles, volume and brightness, the way to lock, wallpapers, keyboard, tasks and settings)
-// and App mixer (every app on its GoXLR channel with its own volume). The task manager
-// lives in the dashboard's Performance tab in bloom: tasks() asks for it with
-// tasksRequested().
+// and App mixer (every app with its own volume, on its GoXLR or virtual channel or its
+// device). The task manager lives in the dashboard's Performance tab in bloom: tasks()
+// asks for it with tasksRequested().
 Scope {
     id: root
 
