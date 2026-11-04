@@ -32,34 +32,47 @@ Item {
 
     implicitHeight: 160 * factor
 
-    Row {
-        anchors.centerIn: parent
+    // A list, not a centred Row: six matches are wider than the launcher, and a Row ran out
+    // past both rounded sides with the picked first one half outside. Centred while it fits,
+    // otherwise it scrolls so the picked one is whole (also while it widens).
+    ListView {
+        id: row
+
+        anchors.fill: parent
+        orientation: ListView.Horizontal
         spacing: Theme.spacing.medium
+        clip: true
+        interactive: contentWidth > width
+        boundsBehavior: Flickable.StopAtBounds
+        leftMargin: Math.max(0, (width - contentWidth) / 2)
+        model: root.list
+        currentIndex: root.current
+        highlightFollowsCurrentItem: false
+        onCurrentIndexChanged: positionViewAtIndex(currentIndex, ListView.Contain)
 
-        Repeater {
-            model: root.list
+        delegate: WallTile {
+            id: tile
 
-            delegate: WallTile {
-                id: tile
+            required property var modelData
+            required property int index
 
-                required property var modelData
-                required property int index
+            y: (row.height - height) / 2
+            width: (picked ? 210 : 120) * root.factor
+            height: 150 * root.factor
+            wall: modelData
+            picture: root.modes?.wallPicture(modelData) ?? ""
+            picked: index === root.current
+            inUse: modelData.path === root.inUse
+            restRadius: Theme.rounding.large
+            onClicked: {
+                root.current = index;
+                root.apply(false);
+            }
+            onWidthChanged: if (picked)
+                row.positionViewAtIndex(index, ListView.Contain)
 
-                width: (picked ? 210 : 120) * root.factor
-                height: 150 * root.factor
-                wall: modelData
-                picture: root.modes?.wallPicture(modelData) ?? ""
-                picked: index === root.current
-                inUse: modelData.path === root.inUse
-                restRadius: Theme.rounding.large
-                onClicked: {
-                    root.current = index;
-                    root.apply(false);
-                }
-
-                Behavior on width {
-                    Anim {}
-                }
+            Behavior on width {
+                Anim {}
             }
         }
     }
