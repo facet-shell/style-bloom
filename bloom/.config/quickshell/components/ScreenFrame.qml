@@ -68,6 +68,42 @@ Scope {
 
             required property ShellScreen modelData
 
+            // Game mode with the frame away: the mouse at the top edge brings the bar back over
+            // the game for a while (the frame and its zones stay away, the game keeps the screen)
+            property bool peek: false
+            readonly property bool canPeek: Bloom.frameAway && !root.hidden
+            onCanPeekChanged: if (!canPeek)
+                peek = false
+
+            // A 1 px strip along the top, above the game, only while the bar is away
+            PanelWindow {
+                screen: perScreen.modelData
+                visible: perScreen.canPeek && !perScreen.peek
+                color: "transparent"
+                exclusionMode: ExclusionMode.Ignore
+                implicitHeight: 1
+                WlrLayershell.layer: WlrLayer.Overlay
+                WlrLayershell.namespace: "qs-frame-peek"
+                WlrLayershell.keyboardFocus: WlrKeyboardFocus.None
+                anchors {
+                    top: true
+                    left: true
+                    right: true
+                }
+
+                HoverHandler {
+                    onHoveredChanged: if (hovered)
+                        perScreen.peek = true
+                }
+            }
+
+            // Back up once the mouse left the bar, not while a drawer of the bar is out
+            Timer {
+                interval: 800
+                running: perScreen.peek && !barHover.hovered && Bloom.inset(perScreen.modelData.name, "top") <= 0
+                onTriggered: perScreen.peek = false
+            }
+
             Zone {
                 screen: perScreen.modelData
                 away: root.away
@@ -98,12 +134,15 @@ Scope {
 
                 // 1 while the frame is there, 0 while it is away; the bar rides on it
                 property real presence: root.away ? 0 : 1
+                // The bar alone: also out while it peeks over a game
+                property real barPresence: !root.away || perScreen.peek ? 1 : 0
 
                 screen: perScreen.modelData
-                visible: presence > 0.001
+                visible: presence > 0.001 || barPresence > 0.001
                 color: "transparent"
                 exclusionMode: ExclusionMode.Ignore
-                WlrLayershell.layer: WlrLayer.Top
+                // Over a fullscreen game while the bar peeks
+                WlrLayershell.layer: perScreen.peek ? WlrLayer.Overlay : WlrLayer.Top
                 WlrLayershell.namespace: "qs-frame"
                 WlrLayershell.keyboardFocus: WlrKeyboardFocus.None
                 anchors {
@@ -119,6 +158,13 @@ Scope {
                 }
 
                 Behavior on presence {
+                    NumberAnimation {
+                        duration: Theme.anim.drawerIn
+                        easing.type: Easing.BezierSpline
+                        easing.bezierCurve: Theme.curve.emphasizedDecel
+                    }
+                }
+                Behavior on barPresence {
                     NumberAnimation {
                         duration: Theme.anim.drawerIn
                         easing.type: Easing.BezierSpline
@@ -165,8 +211,12 @@ Scope {
 
                     width: window.width
                     height: Theme.frame.bar
-                    y: -height * (1 - window.presence)
-                    opacity: window.presence
+                    y: -height * (1 - window.barPresence)
+                    opacity: window.barPresence
+
+                    HoverHandler {
+                        id: barHover
+                    }
 
                     Loader {
                         anchors.fill: parent
