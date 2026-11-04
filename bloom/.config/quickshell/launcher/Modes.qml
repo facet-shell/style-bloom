@@ -37,9 +37,6 @@ Item {
     // Tab walks through them in this order
     readonly property var order: ["", "=", ">", ":", "s", "d", "t", "a", "#", "/", "ssh", ";", "?"]
         .concat(Claude.available ? ["c"] : []).concat(["wall"])
-    // The chips under an empty field: the mockup's first, then the rest of tui's
-    readonly property var chips: (Claude.available ? ["c"] : [])
-        .concat(["d", "s", "?", "/", "t", "a", ";", ">", "wall", "=", ":", "#", "ssh"])
 
     readonly property var powerActions: [
         { name: "lock", desc: "Lock the screen", symbol: "lock", tint: Theme.primary,

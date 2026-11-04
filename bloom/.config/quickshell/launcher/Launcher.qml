@@ -9,8 +9,8 @@ import qs.config
 import qs.services
 
 // The launcher: a drawer out of the bottom edge (Super+Space, the bar's search button).
-// A round search field with the mode chip, the results as rounded rows under it, and with
-// an empty field the modes as chips. tui's modes all work (Modes.qml has them); Claude (c)
+// A round search field with the mode chip and the results as rounded rows under it; tab or
+// a letter and a space switches the mode. tui's modes all work (Modes.qml has them); Claude (c)
 // answers in its own view, "wall" widens the drawer into the big wallpaper menu and
 // "wall <word>" shows a quick row. Files and the clipboard get a preview beside the list.
 // In a game with "compact in a game" on it opens smaller (Bloom.compact("panels")).
@@ -41,7 +41,7 @@ Scope {
     readonly property var results: listMode ? orNothing(modes.compute(mode, rest)) : []
     readonly property var selected: results.length > 0 ? results[Math.min(current, results.length - 1)] : null
 
-    // In a game: smaller, fewer rows, no chips and no preview
+    // In a game: smaller, fewer rows and no preview
     readonly property bool compact: Bloom.compact("panels")
     readonly property real factor: Bloom.scale("panels")
     readonly property real wallFactor: factor * (compact ? 0.85 : 1)
@@ -124,11 +124,6 @@ Scope {
         const order = modes.order;
         const next = order[(order.indexOf(mode) + step + order.length) % order.length];
         setQuery(modes.prefix(next, rest) + rest);
-    }
-
-    function pickMode(key) {
-        setQuery(modes.prefix(key, ""));
-        field.focusField();
     }
 
     function activate(shift) {
@@ -355,15 +350,6 @@ Scope {
                         visible: root.previewing
                         selected: root.selected
                     }
-                }
-
-                // ── The modes, while the field is empty ──────
-
-                ModeChips {
-                    Layout.fillWidth: true
-                    visible: root.query === "" && !root.compact
-                    entries: modes.chips.map(k => ({ key: k, icon: modes.icons[k], name: modes.names[k] }))
-                    onPicked: key => root.pickMode(key)
                 }
 
                 // ── Where you are and what the keys do ───────
