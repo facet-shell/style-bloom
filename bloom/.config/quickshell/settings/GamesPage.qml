@@ -45,7 +45,7 @@ ColumnLayout {
     ConfigSwitch {
         key: "barOverFullscreen"
         title: "Bar at the top edge over fullscreen"
-        subtitle: "rest the mouse on the top edge in a game's menu and the bar comes down over it (tui's bar; bloom's does not yet)"
+        subtitle: "rest the mouse on the top edge in a game's menu and the bar comes down over it (tui and bloom)"
     }
 
     PageHeading {

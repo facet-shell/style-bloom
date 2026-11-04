@@ -201,15 +201,19 @@ Scope {
 
                 // 1 while the frame is there, 0 while it is away; the bar rides on it
                 property real presence: root.away ? 0 : 1
-                // The bar alone: also out while it peeks over a game
-                property real barPresence: !root.away || perScreen.peek ? 1 : 0
+                // The bar alone: there with the frame, up out of sight over a fullscreen window
+                // (it is under it anyway), so a peek slides it down instead of popping it up
+                property real barPresence: (!root.away && !perScreen.fullscreen) || perScreen.peek ? 1 : 0
+                // On the Overlay layer while the bar peeks and until it has slid up again; the
+                // frame around the hole is not drawn there
+                readonly property bool overFullscreen: perScreen.peek || (perScreen.canPeek && barPresence > 0.001)
 
                 screen: perScreen.modelData
                 visible: presence > 0.001 || barPresence > 0.001
                 color: "transparent"
                 exclusionMode: ExclusionMode.Ignore
                 // Over a fullscreen game while the bar peeks
-                WlrLayershell.layer: perScreen.peek ? WlrLayer.Overlay : WlrLayer.Top
+                WlrLayershell.layer: overFullscreen ? WlrLayer.Overlay : WlrLayer.Top
                 WlrLayershell.namespace: "qs-frame"
                 WlrLayershell.keyboardFocus: WlrKeyboardFocus.None
                 anchors {
@@ -246,7 +250,7 @@ Scope {
                 Shape {
                     anchors.fill: parent
                     // Not while the bar peeks: over a fullscreen window only the bar comes
-                    opacity: perScreen.peek ? 0 : window.presence
+                    opacity: window.overFullscreen ? 0 : window.presence
                     preferredRendererType: Shape.CurveRenderer
 
                     ShapePath {
