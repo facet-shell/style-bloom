@@ -51,6 +51,26 @@ Item {
         onTriggered: root.focusInput()
     }
 
+    // The keyboard can come later than both: a lock taken while another VT is shown gets
+    // it only when the user switches back. Take the focus again then, and on any click (the
+    // field is invisible, so there is nothing else to click into). Lowest in the stack, so
+    // the media buttons and the rest keep their own clicks.
+    Connections {
+        target: root.Window.window
+        function onActiveChanged() {
+            if (root.Window.window.active)
+                root.focusInput();
+        }
+    }
+
+    MouseArea {
+        anchors.fill: parent
+        onPressed: mouse => {
+            root.focusInput();
+            mouse.accepted = false;
+        }
+    }
+
     Component.onCompleted: {
         focusInput();
         clockView.enter(root.step);
