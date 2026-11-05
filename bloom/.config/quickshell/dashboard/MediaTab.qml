@@ -5,9 +5,11 @@ import Quickshell.Services.Mpris
 import Quickshell.Widgets
 import qs.components
 import qs.config
+import qs.media
 
 // The media tab: the big cover, title, artist, progress (a click seeks) and the controls.
-// With more than one player, chips on top pick which one it shows.
+// With more than one player, chips on top pick which one it shows. The play button, the
+// progress and the shuffle / repeat marks take the cover's accent (AlbumColor).
 RowLayout {
     id: root
 
@@ -121,6 +123,7 @@ RowLayout {
                 Layout.fillWidth: true
                 thickness: 6
                 animated: false
+                color: AlbumColor.accent
                 value: root.length > 0 ? root.position / root.length : 0
 
                 MouseArea {
@@ -161,7 +164,7 @@ RowLayout {
                 visible: root.player?.shuffleSupported ?? false
                 icon: "shuffle"
                 active: root.player?.shuffle ?? false
-                iconColor: active ? Theme.primary : hovered ? Theme.text : Theme.dim
+                iconColor: active ? AlbumColor.accent : hovered ? Theme.text : Theme.dim
                 onClicked: root.player.shuffle = !root.player.shuffle
             }
             IconButton {
@@ -176,6 +179,8 @@ RowLayout {
                 size: 56
                 iconSize: 28
                 filled: true
+                fillColor: AlbumColor.accent
+                iconColor: AlbumColor.textOnAccent
                 active: root.playing
                 onClicked: root.player.togglePlaying()
             }
@@ -190,7 +195,7 @@ RowLayout {
                 visible: root.player?.loopSupported ?? false
                 icon: root.player?.loopState === MprisLoopState.Track ? "repeat_one" : "repeat"
                 active: (root.player?.loopState ?? MprisLoopState.None) !== MprisLoopState.None
-                iconColor: active ? Theme.primary : hovered ? Theme.text : Theme.dim
+                iconColor: active ? AlbumColor.accent : hovered ? Theme.text : Theme.dim
                 onClicked: root.player.loopState = root.player.loopState === MprisLoopState.None ? MprisLoopState.Playlist
                     : root.player.loopState === MprisLoopState.Playlist ? MprisLoopState.Track : MprisLoopState.None
             }

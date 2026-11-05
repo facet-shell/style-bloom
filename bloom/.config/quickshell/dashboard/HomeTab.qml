@@ -5,10 +5,12 @@ import Quickshell.Services.Mpris
 import Quickshell.Widgets
 import qs.components
 import qs.config
+import qs.media
 import qs.services
 
 // The dashboard's first tab: the weather on the left with the next hours, media and the
-// short GitHub card in the middle, the month and the next timer or alarm on the right.
+// short GitHub card in the middle (its play button in the cover's accent, AlbumColor), the
+// month and the next timer or alarm on the right.
 RowLayout {
     id: root
 
@@ -212,6 +214,8 @@ RowLayout {
                             icon: root.player?.isPlaying ? "pause" : "play_arrow"
                             size: Theme.control.button
                             filled: true
+                            fillColor: AlbumColor.accent
+                            iconColor: AlbumColor.textOnAccent
                             active: root.player?.isPlaying ?? false
                             onClicked: root.player.togglePlaying()
                         }

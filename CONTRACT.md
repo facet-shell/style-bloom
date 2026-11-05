@@ -194,7 +194,7 @@ Every file documents its properties at the top; this is the overview.
 | `StateLayer` | hover/press wash + MouseArea | `color`, `radius`, `disabled`, all MouseArea signals |
 | `Pill` | round row container (bar pills) | `interactive`, `active`, `padding`, `spacing`, `baseColor`, `activeColor`, `clicked(mouse)`, `scrolled(wheel)` |
 | `ScrimPill` | the in-game see-through pill | as Pill |
-| `IconButton` | round icon button | `icon`, `size`, `iconSize`, `active`, `filled`, `tonal`, `restColor`, `iconColor`, `badge`, `disabled`, `clicked(mouse)` |
+| `IconButton` | round icon button | `icon`, `size`, `iconSize`, `active`, `filled`, `fillColor`, `tonal`, `restColor`, `iconColor`, `badge`, `disabled`, `clicked(mouse)` |
 | `Button` | pill button | `text`, `icon`, `variant` (filled, tonal, plain, text, ok, danger), `compact`, `done`, `clicked(mouse)` |
 | `Card` | rounded block on the surface | `padding`, `interactive`, `baseColor`, `clicked(mouse)`; one child that fills it |
 | `Chip` | small pickable label | `text`, `icon`, `selected`, `closable`, `compact`, `clicked`, `closeClicked` |
@@ -211,7 +211,8 @@ Every file documents its properties at the top; this is the overview.
 | `Menu` | menu rows | `entries` [{text, icon, image, danger, separator, enabled, checked, more, back}], `title`, `activated(index, entry)` |
 | `Drawer` | panel out of a frame edge | `screen`, `edge`, `align`, `offset`, `open`, `bodyWidth/Height`, `padding`, `bodyColor`, `radius`, `fillet`, `fillets`, `namespace`, `windowLayer`, `keyboard`, `closeOnOutside`, `grabWith`, `panelId`; reads `progress`, `extent`, `contentShown`; `dismissed()` |
 | `BarMenu` | a Menu in a top Drawer under a bar button | `entries`, `title`, `menuWidth`, `popup(screen, item)`, `anchorItem`, `activated(index, entry)` |
-| `HolePopup` | a window floating in the hole | `screen`, `position` (Config positions), `margin`, `insetTop/Bottom/Left/Right`, `contentScale`, `shown`, `clickThrough`, `windowLayer`, `namespace` |
+| `HolePopup` | a window floating in the hole | `screen`, `position` (Config positions), `margin`, `insetTop/Bottom/Left/Right`, `contentScale`, `shown`, `clickThrough`, `windowLayer`, `namespace`, `keyboard` |
+| `AlbumColor` (singleton, media/) | the cover's colors for the music parts | `ready`, `accent`, `container`, `textOnAccent` (the theme's while off or without a cover) |
 | `ScreenFrame` | the frame on every screen | `bar` (Component), `hidden`, `color`; reads `away` |
 
 Patterns:

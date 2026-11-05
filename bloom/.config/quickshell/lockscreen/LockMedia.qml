@@ -4,9 +4,11 @@ import Quickshell.Services.Mpris
 import Quickshell.Widgets
 import qs.components
 import qs.config
+import qs.media
 
 // Bottom left of the lockscreen: what plays, with play/pause and next, so a song can be
-// skipped without unlocking. Hidden while no player is there.
+// skipped without unlocking. Hidden while no player is there. The play button takes the
+// cover's accent (AlbumColor); the card itself stays the theme's, the text on it too.
 Card {
     id: root
 
@@ -69,6 +71,8 @@ Card {
             icon: root.player?.isPlaying ? "pause" : "play_arrow"
             size: Theme.control.button
             filled: true
+            fillColor: AlbumColor.accent
+            iconColor: AlbumColor.textOnAccent
             // Rounds into a soft square while it plays, like the media card everywhere else
             active: root.player?.isPlaying ?? false
             disabled: !(root.player?.canTogglePlaying ?? false)

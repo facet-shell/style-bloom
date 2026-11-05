@@ -10,6 +10,7 @@ import qs.config
 //   active      drawn "on": Theme.high behind it, the icon in Theme.text
 //   filled      the main action (play): Theme.primary with the icon in textOnPrimary; it rounds
 //               into a soft square while `active` (the mockup's play/pause)
+//   fillColor   behind a filled button (Theme.primary; the album color on the music parts)
 //   tonal       Theme.secondaryContainer behind it
 //   restColor   behind it at rest ("transparent"; Theme.high for media buttons on a card)
 //   iconColor   the icon (Theme.dim at rest, Theme.text hovered or active, textOnPrimary filled)
@@ -24,6 +25,7 @@ Item {
     property real iconSize: Theme.icon.normal
     property bool active: false
     property bool filled: false
+    property color fillColor: Theme.primary
     property bool tonal: false
     property color restColor: "transparent"
     property color iconColor: filled ? Theme.textOnPrimary : active || layer.containsMouse ? Theme.text : Theme.dim
@@ -45,7 +47,7 @@ Item {
 
         anchors.fill: parent
         radius: root.filled && root.active ? Theme.rounding.normal : height / 2
-        color: root.filled ? Theme.primary
+        color: root.filled ? root.fillColor
             : root.tonal ? Theme.secondaryContainer
             : root.active || layer.containsMouse ? Theme.high
             : root.restColor

@@ -17,6 +17,7 @@ import qs.services
 // song that was playing when the shell started, and only as the rule "sp.song" allows.
 // Size Bloom.scale("spotify"), how long Config.spotifySeconds; where: top center unless
 // spotifyPosition was picked. No like button: Spotify does not offer liking over MPRIS.
+// The pill, the progress line and the play button take the cover's colors (AlbumColor).
 Scope {
     id: root
 
@@ -333,7 +334,7 @@ Scope {
                     anchors.fill: parent
                     visible: false
                     radius: height / 2
-                    color: root.compact ? Theme.scrim : Theme.container
+                    color: root.compact ? Theme.scrim : AlbumColor.container
                 }
 
                 MultiEffect {
@@ -402,7 +403,7 @@ Scope {
                         width: root.compact ? 7 : 10
                         height: width
                         radius: width / 2
-                        color: root.compact ? Theme.scrim : Theme.container
+                        color: root.compact ? Theme.scrim : AlbumColor.container
                         border.width: 2
                         border.color: Theme.alpha(Theme.textOnScrim, 0.2)
                     }
@@ -444,6 +445,7 @@ Scope {
                         Layout.topMargin: Theme.spacing.small
                         visible: !root.compact
                         thickness: 3
+                        color: AlbumColor.accent
                         value: (root.spotify?.length ?? 0) > 0 ? root.spotify.position / root.spotify.length : 0
                     }
                 }
@@ -471,6 +473,8 @@ Scope {
                         icon: root.spotify?.isPlaying ? "pause" : "play_arrow"
                         size: Theme.control.pill
                         filled: true
+                        fillColor: AlbumColor.accent
+                        iconColor: AlbumColor.textOnAccent
                         // Square while playing, round while paused
                         active: root.spotify?.isPlaying ?? false
                         onClicked: root.spotify.togglePlaying()
