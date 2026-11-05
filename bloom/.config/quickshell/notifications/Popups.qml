@@ -29,7 +29,8 @@ Scope {
     // The popups by app, each group's newest first, and where every popup sits in its
     // group (uid → { index, size, key }). Off: one group per popup, the list as it is.
     readonly property var groups: Notifications.groups(Notifications.popups)
-    readonly property var ordered: groups.flatMap(g => g.entries)
+    // Qt's JS engine has no flatMap
+    readonly property var ordered: [].concat(...groups.map(g => g.entries))
     readonly property var places: Notifications.places(Notifications.popups)
     // Keys of the groups opened with their count
     property var unfolded: ({})

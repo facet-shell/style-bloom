@@ -26,7 +26,8 @@ Scope {
     readonly property var groups: Notifications.groups(Notifications.history)
     readonly property var places: Notifications.places(Notifications.history)
     property var unfolded: ({})
-    readonly property var rows: groups.flatMap(g => root.unfolded[g.key] === true ? g.entries : [g.entries[0]])
+    // Qt's JS engine has no flatMap
+    readonly property var rows: [].concat(...groups.map(g => root.unfolded[g.key] === true ? g.entries : [g.entries[0]]))
 
     function toggleGroup(key) {
         const next = Object.assign({}, unfolded);
