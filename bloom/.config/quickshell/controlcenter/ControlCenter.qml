@@ -8,10 +8,10 @@ import qs.config
 import qs.services
 
 // The control center: a drawer out of the right edge, under the status pill. Tabs: Quick
-// (tiles, volume and brightness, the way to lock, wallpapers, keyboard, tasks and settings)
-// and App mixer (every app with its own volume, on its GoXLR or virtual channel or its
-// device). The task manager lives in the dashboard's Performance tab in bloom: tasks()
-// asks for it with tasksRequested().
+// (tiles with pages behind some of them, volume and brightness, the way to lock,
+// wallpapers, keyboard, tasks and settings) and App mixer (every app with its own volume,
+// on its GoXLR or virtual channel or its device). The task manager lives in the
+// dashboard's Performance tab in bloom: tasks() asks for it with tasksRequested().
 Scope {
     id: root
 
@@ -39,6 +39,9 @@ Scope {
     function hide() {
         open = false;
         GoXLR.fast = false;
+        // The next open starts on the tiles again, not on a Wi-Fi list
+        if (root.tab === "quick" && pane.item)
+            pane.item.closePage();
     }
 
     function toggle(screen) {
@@ -100,6 +103,9 @@ Scope {
                     id: pane
 
                     Layout.fillWidth: true
+                    // The pane's keys go to the tab first (the Quick tab's pages take Esc
+                    // before the drawer closes on it)
+                    focus: true
                     sourceComponent: root.tab === "mixer" ? mixerTab : quickTab
                     onLoaded: paneIn.restart()
                 }
