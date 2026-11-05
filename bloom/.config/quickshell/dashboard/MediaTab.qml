@@ -201,6 +201,38 @@ RowLayout {
             }
         }
 
+        RowLayout {
+            Layout.fillWidth: true
+            Layout.topMargin: Theme.spacing.small
+            visible: root.player !== null
+            spacing: 12
+
+            Icon {
+                icon: (root.player?.volume ?? 0) <= 0 ? "volume_off" : "volume_up"
+                size: Theme.icon.normal
+                dim: true
+            }
+            Slider {
+                Layout.fillWidth: true
+                thin: true
+                disabled: !(root.player?.volumeSupported ?? false)
+                value: root.player?.volume ?? 0
+                onMoved: value => {
+                    if (root.player?.volumeSupported)
+                        root.player.volume = value;
+                }
+            }
+            StyledText {
+                Layout.preferredWidth: 42
+                horizontalAlignment: Text.AlignRight
+                text: (root.player?.volumeSupported ?? false)
+                    ? `${Math.round((root.player?.volume ?? 0) * 100)}%` : "—"
+                dim: true
+                tabular: true
+                font.pixelSize: Theme.size.small
+            }
+        }
+
         StyledText {
             Layout.fillWidth: true
             visible: text !== ""
