@@ -9,11 +9,12 @@ import qs.services
 // mockup. Only one can be the default, so a switch only turns on (the others go off). Then the
 // channels: where they come from (a GoXLR, the virtual ones from `facet audio channels on`),
 // and with the virtual ones the rules that put apps on them. Without a GoXLR and without the
-// virtual channels only a line says how to get them.
+// virtual channels only a line says how to get them. One block per page of the category.
 ColumnLayout {
     id: page
 
     required property Item view
+    readonly property string sub: view.page
 
     spacing: Theme.spacing.medium
 
@@ -21,14 +22,20 @@ ColumnLayout {
         return node.description || node.nickname || node.name;
     }
 
-    PageHeading {
-        text: Audio.virtualActive ? "Output · where the channels play" : "Output"
+    // ── Output ──
+
+    StyledText {
+        Layout.fillWidth: true
+        visible: page.sub === "output" && Audio.virtualActive
+        text: "The channels play into the picked one"
+        dim: true
+        font.pixelSize: Theme.size.small
     }
 
     // With the virtual channels the default output is their System channel; picking a device
     // here moves the channels onto it instead (Audio.pickOutput)
     Repeater {
-        model: Audio.masterOutputs
+        model: page.sub === "output" ? Audio.masterOutputs : []
 
         delegate: ConfigRow {
             id: sink
@@ -53,18 +60,16 @@ ColumnLayout {
 
     StyledText {
         Layout.fillWidth: true
-        visible: Audio.masterOutputs.length === 0
+        visible: page.sub === "output" && Audio.masterOutputs.length === 0
         text: "no output found"
         dim: true
         font.pixelSize: Theme.size.small
     }
 
-    PageHeading {
-        text: "Input"
-    }
+    // ── Input ──
 
     Repeater {
-        model: Audio.inputs
+        model: page.sub === "input" ? Audio.inputs : []
 
         delegate: ConfigRow {
             id: source
@@ -89,7 +94,7 @@ ColumnLayout {
 
     StyledText {
         Layout.fillWidth: true
-        visible: Audio.inputs.length === 0
+        visible: page.sub === "input" && Audio.inputs.length === 0
         text: "no microphone found"
         dim: true
         font.pixelSize: Theme.size.small
@@ -97,12 +102,8 @@ ColumnLayout {
 
     // ── Channels ──
 
-    PageHeading {
-        text: "Channels"
-    }
-
     ConfigChoice {
-        visible: Audio.goxlrAvailable || Audio.virtualAvailable
+        visible: page.sub === "channels" && (Audio.goxlrAvailable || Audio.virtualAvailable)
         key: "audioChannels"
         title: "Channels from"
         subtitle: `in use: ${Audio.channelSource === "goxlr" ? "the GoXLR" : Audio.channelSource === "virtual" ? "the virtual channels" : "none, plain devices"}`
@@ -116,7 +117,7 @@ ColumnLayout {
     // Nothing to pick from: only how to get the virtual channels
     StyledText {
         Layout.fillWidth: true
-        visible: !Audio.goxlrAvailable && Audio.virtualSetup === null
+        visible: page.sub === "channels" && !Audio.goxlrAvailable && Audio.virtualSetup === null
         text: "No GoXLR here. facet audio channels on (in a terminal) makes virtual System, Game, Chat and Music outputs: every app on its own channel, a fader each in the control center, a track each in recordings."
         dim: true
         font.pixelSize: Theme.size.small
@@ -125,7 +126,7 @@ ColumnLayout {
     }
 
     ConfigRow {
-        visible: Audio.virtualSetup !== null
+        visible: page.sub === "channels" && Audio.virtualSetup !== null
         title: Audio.virtualAvailable ? Audio.virtualChannels.map(c => c.label).join(", ") : "Virtual channels missing"
         subtitle: Audio.virtualAvailable
             ? `into ${page.label(Audio.channelOutput ?? { name: "no output" })} · other channels: facet audio channels on <names> · gone again: facet audio channels off`
@@ -134,18 +135,18 @@ ColumnLayout {
     }
 
     ConfigSwitch {
-        visible: Audio.virtualActive
+        visible: page.sub === "channels" && Audio.virtualActive
         key: "audioRulesOn"
         title: "Apps to their channel by themselves"
         subtitle: "the rules below, for apps that start on System"
     }
 
     AudioRules {
-        visible: Audio.virtualActive && Config.audioRulesOn
+        visible: page.sub === "channels" && Audio.virtualActive && Config.audioRulesOn
     }
 
     ConfigRow {
-        visible: Audio.virtualActive && Object.keys(Channels.choices).length > 0
+        visible: page.sub === "channels" && Audio.virtualActive && Object.keys(Channels.choices).length > 0
         title: "Picked in the mixer"
         subtitle: Object.keys(Channels.choices).map(k => `${k} → ${Channels.choices[k]}`).join(", ")
         icon: "history"
@@ -161,6 +162,7 @@ ColumnLayout {
     StyledText {
         Layout.fillWidth: true
         Layout.topMargin: Theme.spacing.small
+        visible: page.sub === "channels"
         text: Audio.goxlr ? "Levels per app and the GoXLR's channels are in the control center's mixer."
             : Audio.virtualActive ? "Levels per channel are in the control center, per app in its mixer."
             : "Levels per app are in the control center's mixer."

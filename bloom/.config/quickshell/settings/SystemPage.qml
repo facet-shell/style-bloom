@@ -6,19 +6,20 @@ import qs.config
 import qs.services
 
 // System: updates, the boot splash and the login screen (sudo, in a terminal), checking and
-// cleaning up, what runs (about) and the settings file itself.
+// cleaning up, what runs (about) and the settings file itself. One block per page of the
+// category (view.page).
 ColumnLayout {
     id: page
 
     required property Item view
+    readonly property string sub: view.page
 
     spacing: Theme.spacing.medium
 
-    PageHeading {
-        text: "Updates"
-    }
+    // ── Updates ──
 
     ConfigRow {
+        visible: page.sub === "updates"
         title: "Updates"
         icon: "system_update"
         subtitle: {
@@ -39,16 +40,16 @@ ColumnLayout {
         }
     }
     ConfigSwitch {
+        visible: page.sub === "updates"
         key: "frameUpdates"
         title: "facet updates"
         subtitle: "count the CLI and the modules behind GitHub in the bar too"
     }
 
-    PageHeading {
-        text: "Boot and login"
-    }
+    // ── Boot and login ──
 
     ConfigRow {
+        visible: page.sub === "boot"
         title: "Boot splash and console colors"
         subtitle: "Plymouth and the text consoles in the theme (needs sudo)"
         icon: "power_settings_new"
@@ -65,6 +66,7 @@ ColumnLayout {
         }
     }
     ConfigRow {
+        visible: page.sub === "boot"
         title: "Login screen"
         subtitle: "the lockscreen look at boot, straight into the locked desktop, or the distro's own (greetd, needs sudo)"
         icon: "login"
@@ -86,11 +88,10 @@ ColumnLayout {
         }
     }
 
-    PageHeading {
-        text: "Housekeeping"
-    }
+    // ── Housekeeping ──
 
     ConfigRow {
+        visible: page.sub === "housekeeping"
         title: "Check and clean"
         subtitle: "what is installed and missing; caches and leftovers facet can remove"
         icon: "cleaning_services"
@@ -107,6 +108,7 @@ ColumnLayout {
         }
     }
     ConfigRow {
+        visible: page.sub === "housekeeping"
         title: "Settings file"
         subtitle: Config.file.replace(page.view.home, "~")
         icon: "description"
@@ -119,12 +121,11 @@ ColumnLayout {
         }
     }
 
-    PageHeading {
-        text: "About"
-    }
+    // ── About ──
 
     Rectangle {
         Layout.fillWidth: true
+        visible: page.sub === "about"
         implicitHeight: aboutText.implicitHeight + Theme.padding.card * 2
         radius: Theme.rounding.medium
         color: Theme.container

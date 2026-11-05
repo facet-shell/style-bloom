@@ -4,8 +4,9 @@ import Quickshell.Io
 import qs.config
 
 // The settings as their own window: Super+, or "settings" in the control center,
-// `qs ipc call settings toggle`, `qs ipc call settings section sound`. The content is
-// SettingsView: the sections as pills on the left, their rows on the right.
+// `qs ipc call settings toggle`, `qs ipc call settings section sound` (a category, or a
+// page as "shell/weather"). The content is SettingsView: the categories as pills on the
+// left, the picked one's menu or page on the right.
 Scope {
     id: root
 
@@ -16,7 +17,7 @@ Scope {
 
     function show(section) {
         if (section)
-            view.section = view.sectionFor(section);
+            view.goTo(section);
         open = true;
         view.refresh();
         view.forceActiveFocus();

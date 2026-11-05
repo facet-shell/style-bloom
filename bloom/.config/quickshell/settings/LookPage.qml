@@ -3,22 +3,21 @@ import QtQuick.Layouts
 import qs.components
 import qs.config
 
-// Look: the style (tui or bloom), the colors (the themes as swatch cards, or taken from the
-// wallpaper), how windows are laid out, the corners, the animations and the wallpaper app.
+// Appearance: the style (tui or bloom), the colors (the themes as swatch cards, the
+// wallpaper's colors, the album cover), the layout, corners and animations. One block per
+// page of the category (view.page); the wallpaper row in the menu opens the app.
 ColumnLayout {
     id: page
 
     required property Item view
+    readonly property string sub: view.page
 
     spacing: Theme.spacing.medium
 
     // ── Style ──
 
-    PageHeading {
-        text: "Style"
-    }
-
     ConfigRow {
+        visible: page.sub === "style"
         title: "Style"
         subtitle: "the look of the whole desktop: tui's square frames or bloom's rounded one; the colors stay. Opens a terminal, the shell restarts with the new one"
 
@@ -37,12 +36,9 @@ ColumnLayout {
 
     // ── Colors ──
 
-    PageHeading {
-        text: "Colors"
-    }
-
     StyledText {
         Layout.fillWidth: true
+        visible: page.sub === "colors"
         text: "Every app, the boot screen and the keyboard follow the theme"
         dim: true
         font.pixelSize: Theme.size.small
@@ -54,6 +50,7 @@ ColumnLayout {
         id: grid
 
         Layout.fillWidth: true
+        visible: page.sub === "colors"
         columns: 3
         columnSpacing: Theme.spacing.medium - 2
         rowSpacing: Theme.spacing.medium - 2
@@ -101,7 +98,7 @@ ColumnLayout {
 
     StyledText {
         Layout.fillWidth: true
-        visible: Config.colorMode === "dynamic" && !Theme.dynamic
+        visible: page.sub === "colors" && Config.colorMode === "dynamic" && !Theme.dynamic
         text: "Nothing has taken colors from the wallpaper yet, so the theme's stay until it does."
         dim: true
         font.pixelSize: Theme.size.small
@@ -109,13 +106,21 @@ ColumnLayout {
         elide: Text.ElideNone
     }
 
-    // ── Layout ──
-
     PageHeading {
-        text: "Layout"
+        visible: page.sub === "colors"
+        text: "Music"
+    }
+    ConfigSwitch {
+        visible: page.sub === "colors"
+        key: "albumColors"
+        title: "Colors from the album cover"
+        subtitle: "the Spotify popup, the media card and the lockscreen's music take their accent from the cover"
     }
 
+    // ── Layout and motion ──
+
     ConfigRow {
+        visible: page.sub === "layout"
         title: "Windows"
         subtitle: "Hyprland's tiling, or the infinite canvas where windows float on an endless plane"
 
@@ -133,6 +138,7 @@ ColumnLayout {
     }
 
     ConfigChoice {
+        visible: page.sub === "layout"
         key: "corners"
         title: "Corners"
         subtitle: "how round the frame, the panels and the cards are"
@@ -140,32 +146,12 @@ ColumnLayout {
     }
 
     ConfigChoice {
+        visible: page.sub === "layout"
         key: "animations"
         title: "Animations"
         subtitle: Theme.motion === "off" && Config.animations !== "off"
             ? "off for now: the system asks for less motion (gsettings enable-animations)"
             : "calm is the same without the bounce; the system's reduced motion counts as off"
         options: [["off", "off"], ["calm", "calm"], ["full", "full"]]
-    }
-
-    // ── Wallpaper ──
-
-    PageHeading {
-        text: "Wallpaper"
-    }
-
-    ConfigRow {
-        title: "Wallpaper"
-        subtitle: "pictures, videos and Wallpaper Engine scenes (Super+W)"
-        icon: "wallpaper"
-        interactive: true
-        onClicked: page.view.wallpapersRequested()
-
-        Button {
-            text: "Open"
-            icon: "arrow_forward"
-            variant: "tonal"
-            onClicked: page.view.wallpapersRequested()
-        }
     }
 }

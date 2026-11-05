@@ -6,10 +6,12 @@ import qs.services
 
 // Apps: the facet modules (update what is there, add what is not, each in a terminal) and the
 // settings of the apps around the shell: Spotify's Web API, the keyboard, the GoXLR lights.
+// One block per page of the category (view.page).
 ColumnLayout {
     id: page
 
     required property Item view
+    readonly property string sub: view.page
 
     spacing: Theme.spacing.medium
 
@@ -22,25 +24,24 @@ ColumnLayout {
         ["spotify", "Spotify themed, search and controls in the launcher"],
         ["discord", "Vesktop themed, calls and DMs in the shell"],
         ["steam", "Steam themed through Millennium, its popups in the shell"],
-        ["keyboard", "keyboard lighting and keys (AULA F75)"],
+        ["keyboard", "lighting and keys for supported keyboards"],
         ["zed", "Zed themed"],
         ["zen", "Zen themed, with the start page"],
         ["dolphin", "Dolphin and Qt apps themed"]
     ]
 
-    PageHeading {
-        text: "Modules"
-    }
+    // ── Modules ──
 
     StyledText {
         Layout.fillWidth: true
+        visible: page.sub === "modules"
         text: "only what is installed is downloaded"
         dim: true
         font.pixelSize: Theme.size.small
     }
 
     Repeater {
-        model: page.modules
+        model: page.sub === "modules" ? page.modules : []
 
         delegate: ConfigRow {
             id: mod
@@ -69,11 +70,10 @@ ColumnLayout {
         }
     }
 
-    PageHeading {
-        text: "App settings"
-    }
+    // ── App settings ──
 
     ConfigRow {
+        visible: page.sub === "settings"
         title: "Spotify Web API"
         subtitle: "search and control from the launcher (s) without the app in front"
         icon: "music_note"
@@ -86,6 +86,7 @@ ColumnLayout {
         }
     }
     ConfigRow {
+        visible: page.sub === "settings"
         title: "Keyboard"
         subtitle: "lighting, Fn keys and key colors (Super+K)"
         icon: "keyboard"
@@ -100,13 +101,14 @@ ColumnLayout {
         }
     }
     ConfigSwitch {
+        visible: page.sub === "settings"
         key: "keyboardLive"
         title: "Keyboard live"
         subtitle: "off: the keyboard app only shows what it would send"
     }
     // Only where a GoXLR answers
     ConfigRow {
-        visible: GoXLR.available
+        visible: page.sub === "settings" && GoXLR.available
         title: "GoXLR lights"
         subtitle: "faders, buttons and the animation in the theme's colors"
         icon: "tune"

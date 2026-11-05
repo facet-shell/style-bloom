@@ -6,12 +6,16 @@ import qs.components
 import qs.config
 import qs.services
 
-// The settings window's content (the mockup's #settings): the sections as pills on the left,
-// the picked one's rows on the right. Shell settings go through Config (kept in
-// ~/.config/frameshell/shell.json, the round arrow puts one back); style, theme and layout
-// through the facet command; what needs sudo or shows output opens in a terminal of its own.
-// Each page is its own file (LookPage.qml …) and gets this view as `view` for the commands
-// and the state read here.
+// The settings window's content, laid out like Apple's: the categories as pills on the left
+// with a search box above them, the picked category's menu on the right (MenuPage: its pages
+// as rows with what each is set to), and a page opens over that menu with a back button.
+// Shell settings go through Config (kept in ~/.config/frameshell/shell.json, the round arrow
+// puts one back); style, theme and layout through the facet command; what needs sudo or
+// shows output opens in a terminal of its own.
+//
+// One file per category (LookPage.qml …) holds all of its pages; it gets this view as `view`
+// and shows the block for `view.page`. `qs ipc call settings section <name>` takes a category
+// (tui's keys), a page as "category/page", or one of the aliases.
 FocusScope {
     id: root
 
@@ -19,35 +23,97 @@ FocusScope {
     signal wallpapersRequested()
     signal keyboardRequested()
 
-    property string section: "look"
-    // key, label, icon; the keys are tui's (and `qs ipc call settings section <key>`)
-    readonly property var sections: [
-        { key: "look", label: "Look", icon: "palette" },
-        { key: "notifications", label: "Notifications", icon: "notifications" },
-        { key: "popups", label: "Popups", icon: "picture_in_picture" },
-        { key: "games", label: "Games", icon: "sports_esports" },
-        { key: "sound", label: "Sound", icon: "graphic_eq" },
-        { key: "launcher", label: "Launcher", icon: "search" },
-        { key: "shell", label: "Lock and weather", icon: "lock" },
-        { key: "apps", label: "Apps", icon: "widgets" },
-        { key: "system", label: "System", icon: "settings" }
+    property string category: "look"
+    // "" is the category's menu, else the key of one of its pages
+    property string page: ""
+    // +1 going deeper, -1 coming back: which way the content slides in
+    property int direction: 1
+
+    // key, label, icon, blurb; the pages, optionally in groups (group: "…" on a page starts
+    // one), with `open` for rows that open an app instead of a page
+    readonly property var categories: [
+        { key: "look", label: "Appearance", icon: "palette", blurb: "The style, the colors, how windows lie, the wallpaper", pages: [
+            { key: "style", label: "Style", icon: "auto_awesome", subtitle: "tui's square frames or bloom's rounded one" },
+            { key: "colors", label: "Colors", icon: "palette", subtitle: "a theme, the wallpaper's colors, the album cover" },
+            { key: "layout", label: "Layout and motion", icon: "grid_view", subtitle: "tiling or canvas, corners, animations" },
+            { key: "wallpaper", label: "Wallpaper", icon: "wallpaper", subtitle: "pictures, videos and Wallpaper Engine scenes", open: "wallpapers" }
+        ] },
+        { key: "notifications", label: "Notifications", icon: "notifications", blurb: "How popups look, what comes through and when", pages: [
+            { key: "popups", label: "Popups", icon: "picture_in_picture", subtitle: "corner, style, width, how long they stay" },
+            { key: "groups", label: "Groups and replies", icon: "stacks", subtitle: "one stack per app, answer Discord from the card" },
+            { key: "system", label: "System", icon: "desktop_windows", subtitle: "apps, critical ones, game mode", group: "What shows when" },
+            { key: "discord", label: "Discord", icon: "forum", subtitle: "calls, messages, voice, events" },
+            { key: "steam", label: "Steam", icon: "sports_esports", subtitle: "invites, friends, downloads" },
+            { key: "spotify", label: "Spotify", icon: "music_note", subtitle: "the next song" }
+        ] },
+        { key: "popups", label: "Overlays", icon: "layers", blurb: "The things that come over the desktop: the song, the volume, the call, the panels", pages: [
+            { key: "spotify", label: "Spotify bloom", icon: "music_note", subtitle: "the song popup: size, place, format" },
+            { key: "osd", label: "Volume and faders", icon: "tune", subtitle: "the fader that moved, at the bottom" },
+            { key: "voice", label: "Discord voice overlay", icon: "headset_mic", subtitle: "who is in the channel, over a game" },
+            { key: "panels", label: "Panels", icon: "dock_to_bottom", subtitle: "dashboard, control center and launcher" }
+        ] },
+        { key: "games", label: "Games", icon: "sports_esports", blurb: "What changes while you play", pages: [
+            { key: "mode", label: "Game mode", icon: "sports_esports", subtitle: "by itself, quiet, the frame steps away, the bar" },
+            { key: "fps", label: "Fps overlay", icon: "speed", subtitle: "fps, cpu and gpu in a corner" },
+            { key: "list", label: "Games", icon: "list", subtitle: "which apps count as games, the GoXLR profile" }
+        ] },
+        { key: "sound", label: "Sound", icon: "graphic_eq", blurb: "Where the sound goes, where it comes from, the channels", pages: [
+            { key: "output", label: "Output", icon: "speaker", subtitle: "the device that plays" },
+            { key: "input", label: "Input", icon: "mic", subtitle: "the microphone apps get" },
+            { key: "channels", label: "Channels", icon: "tune", subtitle: "a GoXLR or virtual ones, and which app goes where" }
+        ] },
+        { key: "launcher", label: "Launcher", icon: "search", blurb: "What the launcher does with what you type", pages: [
+            { key: "web", label: "Web search", icon: "language", subtitle: "the engine without a shortcut" },
+            { key: "claude", label: "Claude", icon: "smart_toy", subtitle: "ask in the launcher, the model" },
+            { key: "files", label: "Files and timers", icon: "folder", subtitle: "where file search looks, snooze" }
+        ] },
+        { key: "shell", label: "Lock screen", icon: "lock", blurb: "The lock, what it shows, the weather", pages: [
+            { key: "lock", label: "Lock and screens", icon: "lock", subtitle: "blur, lock when idle, screens off" },
+            { key: "ambient", label: "Ambient", icon: "bedtime", subtitle: "after a while the clock shrinks and drifts" },
+            { key: "weather", label: "Weather", icon: "partly_cloudy_day", subtitle: "the city, how often" }
+        ] },
+        { key: "apps", label: "Apps", icon: "widgets", blurb: "The facet modules and the apps around the shell", pages: [
+            { key: "modules", label: "Modules", icon: "extension", subtitle: "update what is there, add what is not" },
+            { key: "settings", label: "App settings", icon: "tune", subtitle: "Spotify's API, the keyboard, the GoXLR lights" }
+        ] },
+        { key: "system", label: "System", icon: "settings", blurb: "Updates, boot and login, housekeeping", pages: [
+            { key: "updates", label: "Updates", icon: "system_update", subtitle: "packages and facet" },
+            { key: "boot", label: "Boot and login", icon: "power_settings_new", subtitle: "the splash, the login screen" },
+            { key: "housekeeping", label: "Housekeeping", icon: "cleaning_services", subtitle: "check, clean, the settings file" },
+            { key: "about", label: "About", icon: "info", subtitle: "what runs" }
+        ] }
     ]
-    // Other names people (and the mockup) use for a section
+    // Other names people (and the mockup) use for a place: a category, or "category/page"
     readonly property var aliases: ({
         notify: "notifications",
         rules: "notifications",
         popup: "popups",
+        overlays: "popups",
         game: "games",
         audio: "sound",
-        theme: "look",
-        themes: "look",
-        style: "look",
+        theme: "look/colors",
+        themes: "look/colors",
+        colors: "look/colors",
+        style: "look/style",
+        layout: "look/layout",
         lock: "shell",
-        weather: "shell",
-        modules: "apps",
-        about: "system",
-        updates: "system"
+        lockscreen: "shell",
+        ambient: "shell/ambient",
+        weather: "shell/weather",
+        modules: "apps/modules",
+        about: "system/about",
+        updates: "system/updates",
+        fps: "games/fps",
+        voice: "popups/voice",
+        spotify: "popups/spotify",
+        output: "sound/output",
+        input: "sound/input",
+        channels: "sound/channels",
+        claude: "launcher/claude"
     })
+
+    readonly property var current: categories.find(c => c.key === category) ?? categories[0]
+    readonly property var currentPage: page === "" ? null : (current.pages.find(p => p.key === page) ?? null)
 
     readonly property string home: Quickshell.env("HOME")
     readonly property string facet: `${home}/.local/bin/facet`
@@ -65,12 +131,141 @@ FocusScope {
     // This file only runs in bloom, so bloom until the state file says otherwise
     readonly property string currentStyle: styleState.text().trim() || "bloom"
 
-    // A section name from IPC to its key; unknown names keep the page that is open
-    function sectionFor(name) {
+    // ── Where you are ────────────────────────────────────────
+
+    // A name from IPC to a place; unknown names keep what is open
+    function goTo(name) {
         const n = String(name ?? "").trim().toLowerCase();
-        const key = aliases[n] ?? n;
-        return sections.some(s => s.key === key) ? key : section;
+        const target = aliases[n] ?? n;
+        const [c, p] = target.split("/");
+        const cat = categories.find(x => x.key === c);
+        if (!cat)
+            return;
+        direction = 1;
+        category = cat.key;
+        page = p && cat.pages.some(x => x.key === p) ? p : "";
     }
+
+    function openPage(key) {
+        const p = current.pages.find(x => x.key === key);
+        if (!p)
+            return;
+        if (p.open === "wallpapers") {
+            wallpapersRequested();
+            return;
+        }
+        if (p.open === "keyboard") {
+            keyboardRequested();
+            return;
+        }
+        direction = 1;
+        page = key;
+    }
+
+    function back() {
+        if (page === "") {
+            closeRequested();
+            return;
+        }
+        direction = -1;
+        page = "";
+    }
+
+    function pickCategory(key) {
+        if (key === category && page === "")
+            return;
+        direction = page === "" ? 1 : -1;
+        page = "";
+        category = key;
+    }
+
+    // The pages of a category in groups: [{ title, pages }]; a page with `group` starts one
+    function groupsOf(key) {
+        const cat = categories.find(c => c.key === key);
+        const groups = [];
+        for (const p of cat?.pages ?? []) {
+            if (p.group !== undefined || groups.length === 0)
+                groups.push({ title: p.group ?? "", pages: [] });
+            groups[groups.length - 1].pages.push(p);
+        }
+        return groups;
+    }
+
+    // What a page is set to, for the menu's right side (reads live values, so the row follows)
+    function valueOf(cat, key) {
+        const onOff = b => b ? "on" : "off";
+        switch (`${cat}/${key}`) {
+        case "look/style":
+            return currentStyle;
+        case "look/colors":
+            return Config.colorMode === "dynamic" ? "from the wallpaper" : (themes.find(t => t.id === currentTheme)?.name ?? currentTheme);
+        case "look/layout":
+            return `${currentLayout} · ${Config.corners === "veryRound" ? "very round" : Config.corners}`;
+        case "notifications/popups":
+            return `${Config.notificationStyle} · ${Config.notificationPosition.replace("-", " ")}`;
+        case "notifications/groups":
+            return onOff(Config.notificationGroupByApp);
+        case "popups/spotify":
+            return `${Config.spotifyFormat} · ${Config.spotifyPosition.replace("-", " ")}`;
+        case "popups/voice":
+            return ({ always: "always", hidden: "Discord on no screen", game: "in game", never: "never" })[Config.voiceOverlayWhen] ?? "";
+        case "games/mode":
+            return Toggles.gameMode ? "on" : Config.gameModeAuto ? "by itself" : "off";
+        case "games/fps":
+            return onOff(Config.fpsOverlay);
+        case "games/list":
+            return Config.gameClasses.length > 0 ? `${Config.gameClasses.length} added` : "";
+        case "sound/output":
+            return Audio.masterOutput ? (Audio.masterOutput.description || Audio.masterOutput.nickname || Audio.masterOutput.name) : "";
+        case "sound/channels":
+            return Audio.channelSource === "goxlr" ? "GoXLR" : Audio.channelSource === "virtual" ? "virtual" : "none";
+        case "launcher/web":
+            return Config.searchEngines[Config.searchDefault]?.[0] ?? Config.searchDefault;
+        case "launcher/claude":
+            return Config.claudeEnabled ? (Config.claudeModel || "default model") : "off";
+        case "shell/lock":
+            return Config.idleLockMinutes > 0 ? `after ${Config.idleLockMinutes} min` : "never by itself";
+        case "shell/ambient":
+            return Config.lockAmbient ? `after ${Config.lockAmbientMinutes} min` : "off";
+        case "shell/weather":
+            return Config.weatherLocation || "from your connection";
+        case "apps/modules":
+            return installed.length > 0 ? `${installed.length} installed` : "";
+        case "system/updates":
+            return Updates.total + Updates.frameCount > 0 ? `${Updates.total + Updates.frameCount} waiting` : Updates.checking ? "checking" : "up to date";
+        default:
+            return "";
+        }
+    }
+
+    // ── Search ───────────────────────────────────────────────
+
+    readonly property string query: search.text
+    // Pages whose name, line or category matches, for the list under the search box
+    readonly property var matches: {
+        const q = query.trim().toLowerCase();
+        if (q === "")
+            return [];
+        const out = [];
+        for (const c of categories)
+            for (const p of c.pages) {
+                const hay = `${p.label} ${p.subtitle ?? ""} ${c.label} ${p.group ?? ""}`.toLowerCase();
+                if (hay.includes(q))
+                    out.push({ category: c, page: p });
+            }
+        return out.slice(0, 10);
+    }
+
+    function openMatch(m) {
+        search.text = "";
+        forceActiveFocus();
+        category = m.category.key;
+        direction = 1;
+        page = "";
+        openPage(m.page.key);
+    }
+
+    // ── Keys ─────────────────────────────────────────────────
 
     function refresh() {
         themesProc.running = true;
@@ -103,12 +298,31 @@ FocusScope {
         facetProc.running = true;
     }
 
-    Keys.onEscapePressed: root.closeRequested()
-    // Ctrl+Tab and Ctrl+Shift+Tab (or Ctrl+PgDown/PgUp) walk the sections
+    // Esc: a page goes back to its menu, the menu closes the window; Ctrl+F finds; Alt+Left
+    // and Backspace go back; Ctrl+Tab and Ctrl+Shift+Tab (or Ctrl+PgDown/PgUp) walk the categories
+    Keys.onEscapePressed: {
+        if (query !== "") {
+            search.text = "";
+            return;
+        }
+        back();
+    }
     Keys.onPressed: event => {
+        if (event.key === Qt.Key_Backspace || (event.key === Qt.Key_Left && (event.modifiers & Qt.AltModifier))) {
+            if (page !== "") {
+                back();
+                event.accepted = true;
+            }
+            return;
+        }
         if (!(event.modifiers & Qt.ControlModifier))
             return;
-        const i = sections.findIndex(s => s.key === section);
+        if (event.key === Qt.Key_F) {
+            search.focusField();
+            event.accepted = true;
+            return;
+        }
+        const i = categories.findIndex(c => c.key === category);
         let d = 0;
         if (event.key === Qt.Key_Tab || event.key === Qt.Key_PageDown)
             d = 1;
@@ -116,9 +330,12 @@ FocusScope {
             d = -1;
         if (d === 0)
             return;
-        section = sections[(i + d + sections.length) % sections.length].key;
+        pickCategory(categories[(i + d + categories.length) % categories.length].key);
         event.accepted = true;
     }
+
+    onPageChanged: contentIn.restart()
+    onCategoryChanged: contentIn.restart()
 
     // ── Files and commands ───────────────────────────────────
 
@@ -188,6 +405,12 @@ FocusScope {
 
     // ── Pages ────────────────────────────────────────────────
 
+    Component {
+        id: menuPage
+        MenuPage {
+            view: root
+        }
+    }
     Component {
         id: lookPage
         LookPage {
@@ -282,9 +505,9 @@ FocusScope {
         anchors.fill: parent
         spacing: 0
 
-        // ── Sections ──
+        // ── Categories ──
         Rectangle {
-            Layout.preferredWidth: 248
+            Layout.preferredWidth: 256
             Layout.fillHeight: true
             color: Theme.container
 
@@ -303,7 +526,6 @@ FocusScope {
                 RowLayout {
                     Layout.fillWidth: true
                     Layout.leftMargin: Theme.padding.normal
-                    Layout.bottomMargin: Theme.spacing.medium
                     spacing: Theme.spacing.normal
 
                     Icon {
@@ -318,13 +540,106 @@ FocusScope {
                     }
                 }
 
+                SearchField {
+                    id: search
+
+                    Layout.fillWidth: true
+                    Layout.topMargin: Theme.spacing.small
+                    Layout.bottomMargin: Theme.spacing.medium
+                    implicitHeight: Theme.control.button + 2
+                    placeholder: "Search"
+                    baseColor: Theme.high
+                    onAccepted: {
+                        if (root.matches.length > 0)
+                            root.openMatch(root.matches[0]);
+                    }
+                    onEscaped: {
+                        search.text = "";
+                        root.forceActiveFocus();
+                    }
+                }
+
+                // What the search found, instead of the pills
+                Column {
+                    Layout.fillWidth: true
+                    visible: root.query !== ""
+                    spacing: Theme.spacing.tiny
+
+                    StyledText {
+                        visible: root.matches.length === 0
+                        x: Theme.padding.card
+                        text: "nothing with that name"
+                        dim: true
+                        font.pixelSize: Theme.size.small
+                    }
+
+                    Repeater {
+                        model: root.matches
+
+                        delegate: Item {
+                            id: hit
+
+                            required property var modelData
+
+                            width: parent.width
+                            height: Theme.control.button + Theme.spacing.small
+
+                            Rectangle {
+                                anchors.fill: parent
+                                radius: height / 2
+                                color: hitLayer.containsMouse ? Theme.high : "transparent"
+
+                                Behavior on color {
+                                    ColorAnim {}
+                                }
+
+                                StateLayer {
+                                    id: hitLayer
+
+                                    onClicked: root.openMatch(hit.modelData)
+                                }
+                            }
+
+                            RowLayout {
+                                anchors.fill: parent
+                                anchors.leftMargin: Theme.padding.card
+                                anchors.rightMargin: Theme.padding.card
+                                spacing: Theme.spacing.medium
+
+                                Icon {
+                                    icon: hit.modelData.page.icon
+                                    size: Theme.icon.normal - 1
+                                    dim: true
+                                }
+                                ColumnLayout {
+                                    Layout.fillWidth: true
+                                    spacing: 0
+
+                                    StyledText {
+                                        Layout.fillWidth: true
+                                        text: hit.modelData.page.label
+                                        font.pixelSize: Theme.size.small + 1
+                                    }
+                                    StyledText {
+                                        Layout.fillWidth: true
+                                        text: hit.modelData.category.label
+                                        dim: true
+                                        font.pixelSize: Theme.size.tiny
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
                 // The pills, with one highlight that slides to the picked one
                 Item {
                     Layout.fillWidth: true
+                    visible: root.query === ""
                     implicitHeight: nav.implicitHeight
 
                     Rectangle {
-                        readonly property Item target: navRepeater.count > 0 ? navRepeater.itemAt(Math.max(0, root.sections.findIndex(s => s.key === root.section))) : null
+                        readonly property Item target: navRepeater.count > 0 ? navRepeater.itemAt(Math.max(0, root.categories.findIndex(c => c.key === root.category))) : null
 
                         visible: target !== null
                         x: 0
@@ -348,13 +663,13 @@ FocusScope {
                         Repeater {
                             id: navRepeater
 
-                            model: root.sections
+                            model: root.categories
 
                             delegate: Item {
                                 id: navEntry
 
                                 required property var modelData
-                                readonly property bool picked: root.section === modelData.key
+                                readonly property bool picked: root.category === modelData.key
 
                                 width: nav.width
                                 height: Theme.control.button + Theme.spacing.small
@@ -365,7 +680,7 @@ FocusScope {
                                     color: "transparent"
 
                                     StateLayer {
-                                        onClicked: root.section = navEntry.modelData.key
+                                        onClicked: root.pickCategory(navEntry.modelData.key)
                                     }
                                 }
 
@@ -434,72 +749,134 @@ FocusScope {
             }
         }
 
-        // ── The picked section ──
+        // ── The menu, or the open page ──
         Item {
+            id: content
+
             Layout.fillWidth: true
             Layout.fillHeight: true
 
-            Flickable {
-                id: page
+            readonly property real gutter: Theme.padding.drawer + Theme.spacing.small
 
-                anchors.fill: parent
-                contentHeight: pageLoader.height + Theme.padding.drawer * 2
-                clip: true
-                boundsBehavior: Flickable.StopAtBounds
-
-                Loader {
-                    id: pageLoader
-
-                    x: Theme.padding.drawer + Theme.spacing.small
-                    y: Theme.padding.drawer
-                    width: page.width - x * 2
-                    sourceComponent: root.pages[root.section] ?? lookPage
-                    transform: Translate {
-                        id: slide
-                    }
-
-                    onLoaded: {
-                        page.contentY = 0;
-                        pageIn.restart();
-                    }
-                }
-            }
-
-            // A thin thumb on the right while the page is longer than the window
-            Rectangle {
-                readonly property real track: parent.height - Theme.spacing.medium * 2
-
-                visible: page.visibleArea.heightRatio < 1
-                x: parent.width - width - Theme.spacing.small
-                y: Theme.spacing.medium + page.visibleArea.yPosition * track
-                width: Theme.spacing.small
-                height: page.visibleArea.heightRatio * track
-                radius: width / 2
-                color: Theme.outline
-                opacity: page.moving ? 1 : 0.5
-
-                Behavior on opacity {
-                    Anim {
-                        duration: Theme.anim.small
-                    }
-                }
-            }
-
-            // A new page fades in and rises a little, like the mockup's rows
+            // The menu or the page slides in from the side it comes from and fades
             ParallelAnimation {
-                id: pageIn
+                id: contentIn
 
                 Anim {
-                    target: pageLoader
+                    target: contentBox
                     property: "opacity"
                     from: 0
                     to: 1
+                    duration: Theme.anim.medium
                 }
                 Anim {
-                    target: slide
-                    property: "y"
-                    from: 14
+                    target: contentSlide
+                    property: "x"
+                    from: 28 * root.direction
                     to: 0
+                    duration: Theme.anim.medium
+                }
+            }
+
+            ColumnLayout {
+                id: contentBox
+
+                anchors.fill: parent
+                spacing: 0
+                transform: Translate {
+                    id: contentSlide
+                }
+
+                // Fixed at the top: back, where you are, what the page is about
+                RowLayout {
+                    Layout.fillWidth: true
+                    Layout.leftMargin: content.gutter - (root.page !== "" ? Theme.spacing.small : 0)
+                    Layout.rightMargin: content.gutter
+                    Layout.topMargin: Theme.padding.drawer
+                    Layout.bottomMargin: Theme.spacing.medium
+                    spacing: Theme.spacing.small
+
+                    IconButton {
+                        visible: root.page !== ""
+                        Layout.alignment: Qt.AlignTop
+                        Layout.topMargin: 2
+                        icon: "arrow_back"
+                        onClicked: root.back()
+                    }
+
+                    ColumnLayout {
+                        Layout.fillWidth: true
+                        spacing: 2
+
+                        StyledText {
+                            visible: root.page !== ""
+                            text: root.current.label
+                            color: Theme.primary
+                            font.pixelSize: Theme.size.small
+                            font.weight: Font.DemiBold
+                            font.capitalization: Font.AllUppercase
+                            font.letterSpacing: 0.4
+                        }
+                        StyledText {
+                            Layout.fillWidth: true
+                            text: root.currentPage?.label ?? root.current.label
+                            font.pixelSize: Theme.size.title
+                            font.weight: Font.DemiBold
+                        }
+                        StyledText {
+                            Layout.fillWidth: true
+                            text: root.currentPage?.subtitle ?? root.current.blurb
+                            dim: true
+                            font.pixelSize: Theme.size.small
+                            wrapMode: Text.WordWrap
+                            elide: Text.ElideNone
+                        }
+                    }
+                }
+
+                Item {
+                    Layout.fillWidth: true
+                    Layout.fillHeight: true
+
+                    Flickable {
+                        id: scroller
+
+                        anchors.fill: parent
+                        contentHeight: pageLoader.height + Theme.padding.drawer * 2
+                        clip: true
+                        boundsBehavior: Flickable.StopAtBounds
+
+                        Loader {
+                            id: pageLoader
+
+                            x: content.gutter
+                            y: Theme.spacing.small
+                            width: scroller.width - x * 2
+                            sourceComponent: root.page === "" ? menuPage : (root.pages[root.category] ?? menuPage)
+
+                            onLoaded: scroller.contentY = 0
+                        }
+                    }
+
+                    // A thin thumb on the right while the page is longer than the window
+                    Rectangle {
+                        readonly property real track: parent.height - Theme.spacing.medium * 2
+
+                        visible: scroller.visibleArea.heightRatio < 1
+                        x: parent.width - width - Theme.spacing.small
+                        y: Theme.spacing.medium + scroller.visibleArea.yPosition * track
+                        width: Theme.spacing.small
+                        height: scroller.visibleArea.heightRatio * track
+                        radius: width / 2
+                        color: Theme.outline
+                        opacity: scroller.moving ? 1 : 0.5
+
+                        Behavior on opacity {
+                            Anim {
+                                duration: Theme.anim.small
+                            }
+                        }
+                    }
                 }
             }
         }
