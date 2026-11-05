@@ -8,7 +8,8 @@ import qs.config
 import qs.services
 
 // The Discord voice overlay while you are in a voice channel: round faces with a green ring
-// for who talks, names, mic-off and deafen icons, LIVE for who streams, and a short feed of
+// for who talks, names, mic-off and deafen icons, LIVE for who streams, an eye with the count
+// of who watches your own stream (their faces too in the list look), and a short feed of
 // joins, leaves and your own mute as lines that fade. No frame and no background, only a soft
 // shadow so it reads over any game; every click goes through it. Super+Shift+V moves it: then
 // it takes the mouse, drag it anywhere, Esc or the key again keeps the spot (per screen).
@@ -31,6 +32,10 @@ Scope {
     readonly property bool small: Bloom.compact("voice")
     readonly property real size: Bloom.scale("voice")
     readonly property real face: small ? 26 : 36
+
+    // Who watches your stream, shaped like a member so Face can draw them
+    readonly property var viewers: DiscordBridge.streamViewers.map(v => ({ userId: v.id, name: v.name, avatar: v.avatar }))
+    readonly property bool eyeShown: DiscordBridge.streamLive && viewers.length > 0
 
     // Who was there already: only newcomers pop in (the list is replaced on every change)
     property var seen: ({})
@@ -159,6 +164,38 @@ Scope {
             text: "LIVE"
             color: Theme.textOnErrorContainer
             font.pixelSize: Theme.size.tiny - 2
+            font.weight: Font.Bold
+        }
+    }
+
+    // An eye and how many watch your stream; only on your own entry while it runs, fades in and out
+    component Eye: Row {
+        id: eye
+
+        required property var person
+        property real iconSize: Theme.icon.small
+
+        spacing: Theme.spacing.tiny
+        opacity: person.you === true && root.eyeShown ? 1 : 0
+        visible: opacity > 0.01
+
+        Behavior on opacity {
+            Anim {
+                duration: Theme.anim.small
+            }
+        }
+
+        Icon {
+            anchors.verticalCenter: parent.verticalCenter
+            icon: "visibility"
+            size: eye.iconSize
+            color: Theme.primary
+        }
+        StyledText {
+            anchors.verticalCenter: parent.verticalCenter
+            text: String(root.viewers.length)
+            color: Theme.primary
+            font.pixelSize: eye.iconSize - 5
             font.weight: Font.Bold
         }
     }
@@ -348,6 +385,30 @@ Scope {
                                 person: row.modelData
                                 size: root.small ? Theme.icon.small - 3 : Theme.icon.small
                             }
+                            Eye {
+                                anchors.verticalCenter: parent.verticalCenter
+                                person: row.modelData
+                                iconSize: root.small ? Theme.icon.small - 3 : Theme.icon.small
+                            }
+                            // The viewers' faces, smaller than the members'; the list look only
+                            Row {
+                                anchors.verticalCenter: parent.verticalCenter
+                                spacing: Theme.spacing.small
+                                visible: row.modelData.you === true && root.eyeShown && root.look === "list"
+
+                                Repeater {
+                                    model: ScriptModel {
+                                        values: row.modelData.you === true ? root.viewers : []
+                                    }
+
+                                    delegate: Face {
+                                        required property var modelData
+
+                                        person: modelData
+                                        size: root.small ? 18 : 22
+                                    }
+                                }
+                            }
                         }
                     }
                 }
@@ -410,6 +471,14 @@ Scope {
                                     anchors.topMargin: -Theme.spacing.small
                                     visible: cell.modelData.streaming === true
                                     scale: 0.8
+                                }
+                                // Bottom left, the mute icon has the bottom right
+                                Eye {
+                                    anchors.left: parent.left
+                                    anchors.bottom: parent.bottom
+                                    anchors.bottomMargin: -Theme.spacing.small
+                                    person: cell.modelData
+                                    iconSize: Theme.icon.small - 4
                                 }
                             }
                             StyledText {
