@@ -1,5 +1,6 @@
 import QtQuick
 import Quickshell
+import Quickshell.Wayland
 import qs.components
 import qs.config
 import qs.services
@@ -9,6 +10,9 @@ import qs.services
 // Bloom.scale("notification"). On a side they step aside while a drawer is out there (the
 // control center, the history); at the bottom the newest sits nearest the edge. In a game
 // with Bloom.compact("notification") they turn into see-through pills close to the edge.
+// With Config.notificationGroupByApp the cards of one app sit together and stack: only the
+// newest shows, the rest hide under it with a count until the stack is opened. The window
+// takes the keyboard only while a card's reply field is open.
 Scope {
     id: root
 
@@ -22,6 +26,35 @@ Scope {
     // the hole's edge, so this is also the distance to it
     readonly property real pad: Theme.spacing.large
 
+    // The popups by app, each group's newest first, and where every popup sits in its
+    // group (uid → { index, size, key }). Off: one group per popup, the list as it is.
+    readonly property var groups: Notifications.groups(Notifications.popups)
+    readonly property var ordered: groups.flatMap(g => g.entries)
+    readonly property var places: Notifications.places(Notifications.popups)
+    // Keys of the groups opened with their count
+    property var unfolded: ({})
+    // Reply fields open right now; the window has the keyboard while there is one
+    property int replyOpen: 0
+
+    function toggleGroup(key) {
+        const next = Object.assign({}, unfolded);
+        if (next[key])
+            delete next[key];
+        else
+            next[key] = true;
+        unfolded = next;
+    }
+
+    // Nothing on screen: forget which groups were open
+    Connections {
+        target: Notifications
+
+        function onPopupsChanged() {
+            if (Notifications.popups.length === 0 && Object.keys(root.unfolded).length > 0)
+                root.unfolded = {};
+        }
+    }
+
     HolePopup {
         id: popup
 
@@ -33,6 +66,7 @@ Scope {
         contentScale: Bloom.scale("notification")
         shown: !root.hidden && Notifications.popups.length > 0
         namespace: "qs-notifications"
+        keyboard: root.replyOpen > 0 ? WlrKeyboardFocus.OnDemand : WlrKeyboardFocus.None
 
         Behavior on insetLeft {
             Anim {
@@ -60,11 +94,13 @@ Scope {
                 // ScriptModel keeps existing cards (and their timers) when the list changes
                 Repeater {
                     model: ScriptModel {
-                        values: root.atTop ? Notifications.popups : Notifications.popups.slice().reverse()
+                        values: root.atTop ? root.ordered : root.ordered.slice().reverse()
                     }
 
                     delegate: NoteCard {
                         required property var modelData
+
+                        readonly property var place: root.places[modelData.uid] ?? ({ index: 0, size: 1, key: "" })
 
                         entry: modelData
                         side: root.side
@@ -72,8 +108,13 @@ Scope {
                         compact: root.compact
                         compactWidth: column.width
                         cardWidth: column.width
+                        stackIndex: place.index
+                        stackSize: place.size
+                        groupOpen: root.unfolded[place.key] === true
                         // Narrower ones (minimal) sit on the side the popups are on
                         x: root.side === "left" ? 0 : root.side === "right" ? column.width - width : (column.width - width) / 2
+                        onGroupToggled: root.toggleGroup(place.key)
+                        onReplyToggled: opened => root.replyOpen += opened ? 1 : -1
                     }
                 }
 

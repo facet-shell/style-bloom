@@ -9,7 +9,9 @@ import qs.services
 
 // The notification history, out of the right edge under the bell: newest first as rounded
 // rows (picture, title, when, app, text, the actions that still make sense), "silent" and
-// "clear all" on top. Opening it counts everything as seen (the bell's dot goes).
+// "clear all" on top. With Config.notificationGroupByApp an app's entries fold into one row
+// (its newest, with a "+2" count); a click on the row unfolds the rest under it, another
+// folds them. Opening it counts everything as seen (the bell's dot goes).
 // `qs ipc call notifications toggle`, also `open` and `close`.
 Scope {
     id: root
@@ -18,6 +20,22 @@ Scope {
     property ShellScreen screen: null
     // "5m" moves on while the drawer is out
     property int tick: 0
+
+    // The history by app and where every entry sits in its group (uid → { index, size,
+    // key }); the rows shown are each group's newest plus, for the groups opened, the rest
+    readonly property var groups: Notifications.groups(Notifications.history)
+    readonly property var places: Notifications.places(Notifications.history)
+    property var unfolded: ({})
+    readonly property var rows: groups.flatMap(g => root.unfolded[g.key] === true ? g.entries : [g.entries[0]])
+
+    function toggleGroup(key) {
+        const next = Object.assign({}, unfolded);
+        if (next[key])
+            delete next[key];
+        else
+            next[key] = true;
+        unfolded = next;
+    }
 
     function show(screen) {
         root.screen = screen ?? Bloom.focusedScreen;
@@ -129,7 +147,7 @@ Scope {
                 spacing: Theme.spacing.normal
                 boundsBehavior: Flickable.StopAtBounds
                 model: ScriptModel {
-                    values: Notifications.history
+                    values: root.rows
                 }
 
                 add: Transition {
@@ -151,8 +169,14 @@ Scope {
                     required property var modelData
 
                     readonly property bool actionable: modelData.actions.length > 0 && modelData.callEnded !== true
+                    readonly property var place: root.places[modelData.uid] ?? ({ index: 0, size: 1, key: "" })
+                    // The newest of a group with more: it carries the count and the click
+                    readonly property bool head: place.index === 0 && place.size > 1
+                    readonly property bool unfolded: root.unfolded[place.key] === true
 
-                    width: ListView.view.width
+                    // The rest of an open group sits a step in under its newest
+                    x: place.index > 0 ? Theme.spacing.large : 0
+                    width: ListView.view.width - x
                     implicitHeight: rowContent.implicitHeight + Theme.padding.normal * 2
                     radius: Theme.rounding.large
                     color: hover.hovered ? Theme.high : Theme.container
@@ -163,6 +187,12 @@ Scope {
 
                     HoverHandler {
                         id: hover
+                    }
+
+                    // Under the content, so the action buttons still get their clicks
+                    StateLayer {
+                        disabled: !row.head
+                        onClicked: root.toggleGroup(row.place.key)
                     }
 
                     RowLayout {
@@ -193,6 +223,28 @@ Scope {
                                     text: row.modelData.title
                                     font.weight: Font.Medium
                                     font.pixelSize: Theme.size.small + 1
+                                }
+                                // "+2": how many more of this app fold under the row
+                                Rectangle {
+                                    visible: row.head
+                                    implicitWidth: countText.implicitWidth + Theme.spacing.normal * 2
+                                    implicitHeight: 18
+                                    radius: height / 2
+                                    color: row.unfolded ? Theme.primary : Theme.primaryContainer
+
+                                    Behavior on color {
+                                        ColorAnim {}
+                                    }
+
+                                    StyledText {
+                                        id: countText
+
+                                        anchors.centerIn: parent
+                                        text: `+${row.place.size - 1}`
+                                        color: row.unfolded ? Theme.textOnPrimary : Theme.textOnPrimaryContainer
+                                        font.pixelSize: Theme.size.tiny
+                                        font.weight: Font.Medium
+                                    }
                                 }
                                 StyledText {
                                     text: {

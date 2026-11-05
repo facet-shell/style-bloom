@@ -12,6 +12,14 @@ import qs.services
 // small buttons there. It springs in from the side it sits on and folds away; the time line
 // pauses while the mouse is on it. A ringing call breathes green (ring, glow, ripples on the
 // picture, the answer button pulses) until it is answered.
+//
+// In a stack (Popups groups the popups by app) the front card shows the older ones peeking
+// out under it, two at most, with a "+2" count; the count or the stack opens the group, the
+// count folds it again. A hidden card takes no room and its countdown waits. A Discord
+// message with a channel (Config.notificationInlineReply) gets a reply field in the card:
+// Enter sends through the bridge, Esc closes it, the countdown waits while it is open, and
+// "sent" shows for a moment before the card goes. Only the card look has the field; a line,
+// a minimal one and the in-game pill open Discord instead.
 Item {
     id: root
 
@@ -22,6 +30,15 @@ Item {
     property bool compact: false
     property real cardWidth: Config.notificationWidth
     property real compactWidth: 320
+    // Its place in the app's stack: 0 is the front card, size how many the stack holds,
+    // groupOpen whether the stack is unfolded (Popups keeps that)
+    property int stackIndex: 0
+    property int stackSize: 1
+    property bool groupOpen: false
+
+    signal groupToggled()
+    // The reply field opened or closed; Popups gives the window the keyboard meanwhile
+    signal replyToggled(bool opened)
 
     readonly property bool isCall: entry.kind === "call"
     readonly property bool mini: entry.kind === "mini"
@@ -35,6 +52,20 @@ Item {
     // With no ok / no styles the first action is the main one (filled)
     readonly property bool styled: entry.actions.some(a => a.style !== "")
     readonly property real pad: Theme.padding.card
+
+    // Hidden under the front card of its stack
+    readonly property bool stacked: stackIndex > 0 && !groupOpen
+    // How many hide under this card, and how many of them peek out
+    readonly property int behind: stackIndex === 0 && !groupOpen ? stackSize - 1 : 0
+    readonly property int peeks: Math.min(behind, 2)
+    readonly property real peekStep: Theme.spacing.small + Theme.spacing.tiny
+    readonly property bool countShown: stackIndex === 0 && stackSize > 1
+
+    // The field fits the card look only; elsewhere "reply" opens Discord like "open"
+    readonly property bool canReply: Config.notificationInlineReply && look === "card"
+        && (entry.replyChannel ?? "") !== "" && DiscordBridge.connected
+    property bool replying: false
+    property bool sent: false
 
     // 1 → 0 over the timeout
     property real remaining: 1
@@ -52,10 +83,24 @@ Item {
         return Notifications.ago(root.entry.time);
     }
 
+    visible: !stacked
     implicitWidth: body.width
-    implicitHeight: body.height * fold
+    implicitHeight: (body.height + peeks * peekStep) * fold
 
-    Component.onCompleted: appear = 1
+    // A card born under a stack springs in once it comes to the front or the stack opens
+    Component.onCompleted: {
+        if (!stacked)
+            appear = 1;
+    }
+    onStackedChanged: {
+        if (!stacked)
+            appear = 1;
+    }
+    onReplyingChanged: replyToggled(replying)
+    Component.onDestruction: {
+        if (replying)
+            replyToggled(false);
+    }
 
     Behavior on appear {
         SpringAnim {
@@ -71,13 +116,15 @@ Item {
         onTriggered: root.tick++
     }
 
-    // The countdown is a timer, not motion: it keeps the entry's own length with animations off
+    // The countdown is a timer, not motion: it keeps the entry's own length with animations
+    // off. It waits while the mouse is on the card, while the card hides under a stack and
+    // while a reply is being typed, so nothing runs out unseen.
     NumberAnimation on remaining {
         from: 1
         to: 0
         duration: Math.max(1, root.entry.timeout)
         running: root.entry.timeout > 0
-        paused: running && hover.hovered
+        paused: running && (hover.hovered || root.stacked || root.replying || root.sent)
         onFinished: root.close(true)
     }
 
@@ -107,13 +154,44 @@ Item {
     }
 
     // The action runs at once (accepting a call must not wait for the animation); the
-    // service's invoke() is this plus the dismiss, split so the card can still fold away
+    // service's invoke() is this plus the dismiss, split so the card can still fold away.
+    // "reply" with a field stays in the card: the field takes over from here.
     function act(id) {
         if (leaving)
             return;
+        if (id === "reply" && canReply) {
+            openReply();
+            return;
+        }
         if (root.entry.onAction)
             root.entry.onAction(id);
         close(false);
+    }
+
+    function openReply() {
+        replyField.text = "";
+        replying = true;
+        replyField.focusField();
+        // Again once the window has the keyboard
+        Qt.callLater(replyField.focusField);
+    }
+
+    function sendReply() {
+        const text = replyField.text.trim();
+        if (text === "")
+            return;
+        DiscordBridge.reply(root.entry.replyChannel, text);
+        replying = false;
+        sent = true;
+        sentHold.start();
+    }
+
+    // "sent" stays readable for a moment (a hold, not motion), then the card goes
+    Timer {
+        id: sentHold
+
+        interval: 1200
+        onTriggered: root.close(false)
     }
 
     function actionIcon(id) {
@@ -195,6 +273,38 @@ Item {
         }
     }
 
+    // The stack's "+2": a click unfolds the group, another folds it; filled while open
+    component Count: Rectangle {
+        id: count
+
+        property var card: null
+        readonly property bool open: card?.groupOpen ?? false
+
+        implicitWidth: countText.implicitWidth + Theme.spacing.normal * 2
+        implicitHeight: 18
+        radius: height / 2
+        color: open ? Theme.primary : Theme.primaryContainer
+
+        Behavior on color {
+            ColorAnim {}
+        }
+
+        StyledText {
+            id: countText
+
+            anchors.centerIn: parent
+            text: `+${(count.card?.stackSize ?? 1) - 1}`
+            color: count.open ? Theme.textOnPrimary : Theme.textOnPrimaryContainer
+            font.pixelSize: Theme.size.tiny
+            font.weight: Font.Medium
+        }
+
+        StateLayer {
+            color: countText.color
+            onClicked: count.card.groupToggled()
+        }
+    }
+
     // ── The card itself ──────────────────────────────────────
 
     Item {
@@ -220,6 +330,25 @@ Item {
 
         HoverHandler {
             id: hover
+        }
+
+        // The stack under the front card: the older ones peek out below it, each one
+        // narrower and fainter than the one above
+        Repeater {
+            model: root.peeks
+
+            delegate: Rectangle {
+                required property int index
+
+                z: -1
+                anchors.horizontalCenter: parent.horizontalCenter
+                y: (index + 1) * root.peekStep
+                width: parent.width - (index + 1) * Theme.spacing.large
+                height: parent.height
+                radius: bg.radius
+                color: Theme.high
+                opacity: 0.85 - index * 0.35
+            }
         }
 
         // Drawn by the effect below, which adds the shadow (or a ringing call's green glow)
@@ -297,6 +426,10 @@ Item {
                         dim: true
                         font.pixelSize: Theme.size.tiny
                     }
+                    Count {
+                        visible: root.countShown
+                        card: root
+                    }
                     // Makes room for the close button while the mouse is on the card
                     StyledText {
                         text: root.ago
@@ -328,7 +461,7 @@ Item {
                 Flow {
                     Layout.fillWidth: true
                     Layout.topMargin: Theme.spacing.normal
-                    visible: root.entry.actions.length > 0
+                    visible: root.entry.actions.length > 0 && !root.replying && !root.sent
                     spacing: Theme.spacing.normal
 
                     Repeater {
@@ -337,6 +470,41 @@ Item {
                         delegate: Action {
                             card: root
                         }
+                    }
+                }
+
+                // The reply field in place of the actions: Enter sends, Esc closes it
+                SearchField {
+                    id: replyField
+
+                    Layout.fillWidth: true
+                    Layout.topMargin: Theme.spacing.normal
+                    Layout.preferredHeight: 40
+                    visible: root.replying
+                    icon: "reply"
+                    placeholder: `reply to ${root.entry.replyTo || root.entry.app}`
+                    hint: "enter"
+                    baseColor: Theme.high
+                    onAccepted: root.sendReply()
+                    onEscaped: root.replying = false
+                }
+
+                // What the field leaves behind until the card goes
+                RowLayout {
+                    Layout.topMargin: Theme.spacing.normal
+                    visible: root.sent
+                    spacing: Theme.spacing.small
+
+                    Icon {
+                        icon: "check"
+                        size: Theme.icon.small
+                        color: Theme.ok
+                    }
+                    StyledText {
+                        text: "sent"
+                        color: Theme.ok
+                        font.pixelSize: Theme.size.small
+                        font.weight: Font.Medium
                     }
                 }
             }
@@ -384,6 +552,10 @@ Item {
                 dim: true
                 font.pixelSize: Theme.size.tiny
             }
+            Count {
+                visible: root.countShown
+                card: root
+            }
             StyledText {
                 Layout.fillWidth: true
                 horizontalAlignment: root.textAlign
@@ -427,13 +599,19 @@ Item {
                 text: root.entry.title
                 font.pixelSize: Theme.size.small
             }
+            Count {
+                visible: root.countShown
+                anchors.verticalCenter: parent.verticalCenter
+                card: root
+            }
         }
 
-        // A click on a minimal one puts it away
+        // A click on a minimal one puts it away (its count sits above this and opens the stack)
         MouseArea {
             anchors.fill: parent
             enabled: root.look === "minimal"
             visible: enabled
+            z: -1
             cursorShape: Qt.PointingHandCursor
             onClicked: root.close(false)
         }
@@ -459,6 +637,15 @@ Item {
                 font.pixelSize: Theme.size.small
                 font.weight: Font.Medium
             }
+            // Just the count here; a pill does not unfold
+            StyledText {
+                visible: root.countShown
+                text: `+${root.stackSize - 1}`
+                color: Theme.textOnScrim
+                opacity: 0.8
+                font.pixelSize: Theme.size.tiny
+                font.weight: Font.Medium
+            }
             Repeater {
                 model: root.waits ? root.entry.actions : []
 
@@ -482,5 +669,16 @@ Item {
             color: root.entry.critical ? Theme.error : Theme.primary
             opacity: 0.7
         }
+    }
+
+    // A click on the peeking stack opens the group too
+    MouseArea {
+        visible: root.peeks > 0 && root.look !== "pill"
+        x: body.x
+        y: body.height
+        width: body.width
+        height: root.peeks * root.peekStep
+        cursorShape: Qt.PointingHandCursor
+        onClicked: root.groupToggled()
     }
 }

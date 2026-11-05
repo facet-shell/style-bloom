@@ -29,6 +29,8 @@ import qs.config
 //   clickThrough every click goes through (the voice overlay)
 //   windowLayer  WlrLayer.Overlay (over fullscreen windows, so a game still gets them)
 //   namespace    the layer's name
+//   keyboard     WlrKeyboardFocus.None (default); OnDemand while something in it takes
+//                typing (a notification's reply field), back to None after
 PanelWindow {
     id: root
 
@@ -43,6 +45,7 @@ PanelWindow {
     property bool clickThrough: false
     property int windowLayer: WlrLayer.Overlay
     property string namespace: "qs-bloom-popup"
+    property int keyboard: WlrKeyboardFocus.None
     default property alias content: holder.data
 
     readonly property Item contentChild: holder.children.length > 0 ? holder.children[0] : null
@@ -59,7 +62,7 @@ PanelWindow {
     exclusiveZone: 0
     WlrLayershell.layer: root.windowLayer
     WlrLayershell.namespace: root.namespace
-    WlrLayershell.keyboardFocus: WlrKeyboardFocus.None
+    WlrLayershell.keyboardFocus: root.keyboard
 
     anchors {
         top: root.atTop
