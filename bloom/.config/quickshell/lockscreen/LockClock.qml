@@ -7,12 +7,19 @@ import qs.config
 //
 //   time   the date to show (SystemClock.date)
 //   fly    0 … 1: the clock flies up, shrinks and fades (unlocking)
+//   ambient  0 … 1: the clock shrinks to 0.6 (the lockscreen's ambient mode)
+//   dimmed   the digits in Theme.dim instead of the accent (ambient as well)
+//   driftX, driftY  where the clock sits, off its resting place (the ambient drift)
 //   enter(delay)  plays the rise-in, the first digit after `delay` ms
 Item {
     id: root
 
     property date time: new Date()
     property real fly: 0
+    property real ambient: 0
+    property bool dimmed: false
+    property real driftX: 0
+    property real driftY: 0
     // Off until enter() ran, so the first values do not count as changes
     property bool ready: false
 
@@ -33,15 +40,17 @@ Item {
     implicitWidth: row.implicitWidth
     implicitHeight: row.implicitHeight
     opacity: 1 - fly
+    // Scaled about the middle, so the drift and the fly move the clock as one
     transform: [
         Scale {
             origin.x: root.width / 2
             origin.y: root.height / 2
-            xScale: 1 - 0.1 * root.fly
-            yScale: 1 - 0.1 * root.fly
+            xScale: (1 - 0.1 * root.fly) * (1 - 0.4 * root.ambient)
+            yScale: (1 - 0.1 * root.fly) * (1 - 0.4 * root.ambient)
         },
         Translate {
-            y: -120 * root.fly
+            x: root.driftX
+            y: root.driftY - 120 * root.fly
         }
     ]
 
@@ -51,8 +60,9 @@ Item {
         property string value: "0"
         // 0 below and gone, 1 in place; the spring takes it a little past 1
         property real rise: 0
-        // Inline components cannot see the file's ids, so the clock hands this in
+        // Inline components cannot see the file's ids, so the clock hands these in
         property bool live: false
+        property bool dimmed: false
 
         function play(delay) {
             rise = 0;
@@ -72,7 +82,7 @@ Item {
             y: 60 * (1 - digit.rise)
             opacity: Math.max(0, Math.min(1, digit.rise))
             text: digit.value
-            color: Theme.primary
+            color: digit.dimmed ? Theme.dim : Theme.primary
             font.family: Theme.font
             font.pixelSize: Theme.size.clock
             font.weight: Font.Light
@@ -111,11 +121,13 @@ Item {
             id: d0
             value: root.hh.charAt(0)
             live: root.ready
+            dimmed: root.dimmed
         }
         Digit {
             id: d1
             value: root.hh.charAt(1)
             live: root.ready
+            dimmed: root.dimmed
         }
 
         Item {
@@ -135,10 +147,16 @@ Item {
                 y: 60 * (1 - colon.rise) - Theme.size.clock * 0.04
                 opacity: colon.blink * Math.max(0, Math.min(1, colon.rise))
                 text: ":"
-                color: Theme.primary
+                color: root.dimmed ? Theme.dim : Theme.primary
                 font.family: Theme.font
                 font.pixelSize: Theme.size.clock
                 font.weight: Font.Light
+
+                Behavior on color {
+                    ColorAnim {
+                        duration: Theme.anim.color
+                    }
+                }
             }
 
             SequentialAnimation {
@@ -181,11 +199,13 @@ Item {
             id: d2
             value: root.mm.charAt(0)
             live: root.ready
+            dimmed: root.dimmed
         }
         Digit {
             id: d3
             value: root.mm.charAt(1)
             live: root.ready
+            dimmed: root.dimmed
         }
     }
 }
