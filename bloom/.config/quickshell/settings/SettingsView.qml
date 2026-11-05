@@ -126,7 +126,8 @@ FocusScope {
     property string about: ""
     property string status: ""
 
-    readonly property string currentTheme: themeState.text().trim() || "periwinkle"
+    // Each style keeps its own theme (facet: theme-<style>); bloom's default is nebula
+    readonly property string currentTheme: themeState.text().trim() || "nebula"
     readonly property string currentLayout: layoutState.text().trim() === "canvas" ? "canvas" : "tiling"
     // This file only runs in bloom, so bloom until the state file says otherwise
     readonly property string currentStyle: styleState.text().trim() || "bloom"
@@ -387,8 +388,11 @@ FocusScope {
 
     FileView {
         id: themeState
-        path: `${root.stateDir}/theme`
+        path: `${root.stateDir}/theme-bloom`
         printErrors: false
+        // facet theme set writes it while the page is open: the pick follows at once
+        watchChanges: true
+        onFileChanged: reload()
     }
 
     FileView {
