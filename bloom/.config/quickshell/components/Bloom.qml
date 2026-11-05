@@ -21,10 +21,47 @@ import qs.services
 //   Bloom.inset(name, edge, id)   how far drawers on that edge of that screen reach into the
 //                                 hole right now (target size, not the animated one), the
 //                                 drawer `id` left out; 0 when none is out
+//   Bloom.preview(what)           shows a test of a popup now, past the rules and the bell:
+//                                 notification, call or spotify (the settings' "show a test",
+//                                 `qs ipc call preview popup <what>`)
 Singleton {
     id: root
 
     readonly property bool gaming: Toggles.gameMode
+
+    // SpotifyPopup listens; the notification ones go straight to Notifications
+    signal previewRequested(string what)
+
+    function preview(what) {
+        if (what === "notification")
+            Notifications.push({
+                app: "frameshell",
+                title: "A test notification",
+                body: "This is how a notification looks with your settings. The buttons do nothing.",
+                icon: "notifications",
+                preview: true,
+                actions: [
+                    { id: "ok", label: "nice", style: "ok" },
+                    { id: "no", label: "dismiss", style: "" }
+                ]
+            });
+        else if (what === "call")
+            Notifications.push({
+                app: "Discord",
+                kind: "call",
+                title: "Test call",
+                body: "is calling you (a test, no one is)",
+                icon: "call",
+                preview: true,
+                timeout: 8000,
+                actions: [
+                    { id: "accept", label: "accept", style: "ok" },
+                    { id: "decline", label: "decline", style: "no" }
+                ]
+            });
+        else
+            previewRequested(what);
+    }
     readonly property ShellScreen focusedScreen: {
         const name = Hyprland.focusedMonitor?.name;
         return Quickshell.screens.find(s => s.name === name) ?? Quickshell.screens[0] ?? null;

@@ -20,6 +20,22 @@ ColumnLayout {
 
     // ── Popups ──
 
+    ConfigRow {
+        visible: page.sub === "popups"
+        title: "Try it"
+        subtitle: "a popup with your settings, also while the bell is silent; not kept in the history"
+
+        Button {
+            text: "notification"
+            icon: "notifications"
+            onClicked: Bloom.preview("notification")
+        }
+        Button {
+            text: "call"
+            icon: "call"
+            onClicked: Bloom.preview("call")
+        }
+    }
     ConfigSize {
         visible: page.sub === "popups"
         key: "notificationSize"

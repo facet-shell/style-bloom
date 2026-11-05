@@ -21,6 +21,17 @@ ColumnLayout {
 
     // ── Spotify ──
 
+    ConfigRow {
+        visible: page.sub === "spotify"
+        title: "Try it"
+        subtitle: "the bloom with the song playing now, or a made-up one"
+
+        Button {
+            text: "show a test"
+            icon: "music_note"
+            onClicked: Bloom.preview("spotify")
+        }
+    }
     ConfigSize {
         visible: page.sub === "spotify"
         key: "spotifySize"

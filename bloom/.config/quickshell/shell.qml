@@ -1,7 +1,9 @@
 import QtQuick
 import Quickshell
+import Quickshell.Io
 import qs.bar
 import qs.canvas
+import qs.components
 import qs.controlcenter
 import qs.dashboard
 import qs.draw
@@ -166,6 +168,15 @@ ShellRoot {
     // AULA F75 lighting, Fn keys and per-key colors (Super+K, keyboard package)
     KeyboardApp {
         id: keyboard
+    }
+
+    // qs ipc call preview popup notification|call|spotify (the settings' "Try it" buttons)
+    IpcHandler {
+        target: "preview"
+
+        function popup(what: string): void {
+            Bloom.preview(what);
+        }
     }
 
     // Super+, or "settings" in the control center

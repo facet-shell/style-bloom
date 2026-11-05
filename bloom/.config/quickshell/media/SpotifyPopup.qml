@@ -25,6 +25,8 @@ Scope {
 
     readonly property MprisPlayer spotify: Mpris.players.values.find(p => p.identity === "Spotify") ?? null
     property string lastTrack: ""
+    // A test from the settings is out (Bloom.preview("spotify")): shows without Spotify too
+    property bool previewing: false
 
     // The bloom's own place is under the clock; tui's default (top-left) is not read
     readonly property string position: Config.user.spotifyPosition ?? "top"
@@ -102,6 +104,26 @@ Scope {
             dropTime = drop > 0.99 ? 0 : Theme.anim.drawerIn;
             phase = "opening";
             openAnim.restart();
+        }
+    }
+
+    // The song playing now, or a made-up one when Spotify is not running
+    function preview() {
+        previewing = true;
+        bloom();
+        if (!spotify || spotify.trackTitle === "") {
+            title = "Test song";
+            artist = "frameshell";
+            art = "";
+        }
+    }
+
+    Connections {
+        target: Bloom
+
+        function onPreviewRequested(what) {
+            if (what === "spotify")
+                root.preview();
         }
     }
 
@@ -236,7 +258,10 @@ Scope {
             easing.bezierCurve: Theme.curve.emphasizedAccel
         }
         ScriptAction {
-            script: root.phase = "closed"
+            script: {
+                root.phase = "closed";
+                root.previewing = false;
+            }
         }
     }
 
@@ -279,7 +304,7 @@ Scope {
         insetLeft: root.side === "left" ? Bloom.inset(root.screenName, "left") : 0
         insetRight: root.side === "right" ? Bloom.inset(root.screenName, "right") : 0
         contentScale: Bloom.scale("spotify")
-        shown: root.phase !== "closed" && root.spotify !== null
+        shown: root.phase !== "closed" && (root.spotify !== null || root.previewing)
         namespace: "qs-media-popup"
         // Only the pill takes the mouse, not the room kept for its full width
         mask: Region {
@@ -467,7 +492,7 @@ Scope {
                         icon: "skip_previous"
                         size: Theme.control.pill
                         disabled: !(root.spotify?.canGoPrevious ?? false)
-                        onClicked: root.spotify.previous()
+                        onClicked: root.spotify?.previous()
                     }
                     IconButton {
                         icon: root.spotify?.isPlaying ? "pause" : "play_arrow"
@@ -477,13 +502,13 @@ Scope {
                         iconColor: AlbumColor.textOnAccent
                         // Square while playing, round while paused
                         active: root.spotify?.isPlaying ?? false
-                        onClicked: root.spotify.togglePlaying()
+                        onClicked: root.spotify?.togglePlaying()
                     }
                     IconButton {
                         icon: "skip_next"
                         size: Theme.control.pill
                         disabled: !(root.spotify?.canGoNext ?? false)
-                        onClicked: root.spotify.next()
+                        onClicked: root.spotify?.next()
                     }
                 }
             }
