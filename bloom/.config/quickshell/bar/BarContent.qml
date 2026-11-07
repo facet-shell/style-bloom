@@ -46,6 +46,11 @@ Item {
             screen: root.screen
             menu: root.bar?.trayMenu ?? null
         }
+
+        VoicePill {
+            Layout.maximumWidth: Math.max(0, (root.width / 2) - 300)
+            availableWidth: Math.max(0, (root.width / 2) - 300)
+        }
     }
 
     // The clock in the middle of the screen, whatever the sides hold

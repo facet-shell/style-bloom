@@ -93,6 +93,21 @@ ColumnLayout {
 
     // ── Voice ──
 
+    ConfigSwitch {
+        visible: page.sub === "voice"
+        key: "voiceOverlayInBar"
+        title: "Voice in the desktop bar"
+        subtitle: "compact members beside the system tray; the floating overlay stays in games"
+    }
+    ConfigNumber {
+        visible: page.sub === "voice"
+        key: "voiceBarMaxUsers"
+        title: "Users in the bar"
+        subtitle: "maximum visible members; +N shows how many more are in the channel"
+        min: 1
+        max: 12
+    }
+
     ConfigSize {
         visible: page.sub === "voice"
         key: "voiceOverlaySize"

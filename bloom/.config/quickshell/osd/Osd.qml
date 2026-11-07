@@ -27,6 +27,7 @@ Scope {
     property real level: 0      // 0..1, below 0 = no bar
     property string valueText: ""
     property bool muted: false
+    readonly property bool micStatus: level < 0 && (icon === "mic" || icon === "mic_off")
 
     readonly property bool compact: Bloom.compact("osd")
     readonly property real s: Bloom.scale("osd")
@@ -245,7 +246,7 @@ Scope {
             anchors.fill: parent
             anchors.leftMargin: Theme.spacing.small * root.s
             anchors.rightMargin: Theme.spacing.small * root.s
-            implicitWidth: 376 * root.s
+            implicitWidth: (root.micStatus ? 130 : 376) * root.s
             spacing: Theme.spacing.medium * root.s
 
             // The icon in its circle; muted turns it red
@@ -268,6 +269,7 @@ Scope {
             }
 
             ColumnLayout {
+                visible: !root.micStatus
                 Layout.fillWidth: true
                 spacing: Theme.spacing.small + Theme.spacing.tiny
 

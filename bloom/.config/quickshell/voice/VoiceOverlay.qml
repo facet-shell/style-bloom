@@ -176,7 +176,7 @@ Scope {
         property real iconSize: Theme.icon.small
 
         spacing: Theme.spacing.tiny
-        opacity: person.you === true && root.eyeShown ? 1 : 0
+        opacity: DiscordBridge.streamLive && root.viewers.some(v => v.userId === person.userId) ? 1 : 0
         visible: opacity > 0.01
 
         Behavior on opacity {
@@ -191,13 +191,7 @@ Scope {
             size: eye.iconSize
             color: Theme.primary
         }
-        StyledText {
-            anchors.verticalCenter: parent.verticalCenter
-            text: String(root.viewers.length)
-            color: Theme.primary
-            font.pixelSize: eye.iconSize - 5
-            font.weight: Font.Bold
-        }
+
     }
 
     // ── Window ───────────────────────────────────────────────
@@ -210,7 +204,7 @@ Scope {
         // Without a saved spot: on the left under the bar, or near the top with the frame away
         readonly property var pos: Config.voiceOverlayPos[screenName] ?? [28, Bloom.frameAway ? 60 : 120]
 
-        visible: !root.hidden && (DiscordBridge.overlayShown || root.moving)
+        visible: !root.hidden && ((DiscordBridge.overlayShown && !(Config.voiceOverlayInBar && !Bloom.gaming)) || root.moving)
         color: "transparent"
         exclusionMode: ExclusionMode.Ignore
         WlrLayershell.layer: WlrLayer.Overlay
@@ -390,25 +384,7 @@ Scope {
                                 person: row.modelData
                                 iconSize: root.small ? Theme.icon.small - 3 : Theme.icon.small
                             }
-                            // The viewers' faces, smaller than the members'; the list look only
-                            Row {
-                                anchors.verticalCenter: parent.verticalCenter
-                                spacing: Theme.spacing.small
-                                visible: row.modelData.you === true && root.eyeShown && root.look === "list"
 
-                                Repeater {
-                                    model: ScriptModel {
-                                        values: row.modelData.you === true ? root.viewers : []
-                                    }
-
-                                    delegate: Face {
-                                        required property var modelData
-
-                                        person: modelData
-                                        size: root.small ? 18 : 22
-                                    }
-                                }
-                            }
                         }
                     }
                 }

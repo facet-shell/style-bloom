@@ -1,5 +1,6 @@
 import QtQuick
 import QtQuick.Layouts
+import Quickshell
 import qs.components
 import qs.config
 import qs.services
@@ -71,6 +72,32 @@ ColumnLayout {
     }
 
     // ── App settings ──
+
+    ConfigRow {
+        visible: page.sub === "settings"
+        title: "Hotkeys"
+        subtitle: "show all keyboard shortcuts"
+        icon: "keyboard_keys"
+
+        Button {
+            text: "Open"
+            icon: "open_in_new"
+            variant: "tonal"
+            onClicked: Quickshell.execDetached(["qs", "ipc", "call", "hotkeys", "toggle"])
+        }
+    }
+    ConfigSwitch {
+        visible: page.sub === "settings"
+        key: "hotkeysOnHold"
+        title: "Show hotkeys when holding Super"
+        subtitle: "open the shortcut menu after holding Super for 1.5 seconds"
+    }
+    ConfigSwitch {
+        visible: page.sub === "settings"
+        key: "keyboardHotkeyHints"
+        title: "Hotkey lighting on the keyboard"
+        subtitle: "highlight bound keys on supported physical keyboards while modifiers are held"
+    }
 
     ConfigRow {
         visible: page.sub === "settings"

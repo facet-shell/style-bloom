@@ -379,6 +379,9 @@ Scope {
                 Item {
                     id: disc
 
+                    property url shownArt: ""
+                    property real reveal: 1
+
                     x: root.inner
                     anchors.verticalCenter: parent.verticalCenter
                     width: root.discSize
@@ -398,13 +401,10 @@ Scope {
                         anchors.fill: parent
                         radius: width / 2
                         color: Theme.high
-                        opacity: 1 - Math.abs(root.swap)
-                        rotation: -50 * root.swap
-                        scale: 1 - 0.15 * Math.abs(root.swap)
 
                         Icon {
                             anchors.centerIn: parent
-                            visible: cover.status !== Image.Ready
+                            visible: cover.status !== Image.Ready && previousCover.status !== Image.Ready
                             icon: "music_note"
                             size: root.discSize * 0.45
                             dim: true
@@ -418,7 +418,47 @@ Scope {
                             sourceSize: Qt.size(root.discSize * 2, root.discSize * 2)
                             fillMode: Image.PreserveAspectCrop
                             asynchronous: true
-                            smooth: true
+                            visible: status === Image.Ready
+                            opacity: disc.reveal
+                            scale: 0.96 + 0.04 * disc.reveal
+                            onSourceChanged: previousCover.source = disc.shownArt
+                            onStatusChanged: {
+                                if (status === Image.Ready) {
+                                    dissolve.stop();
+                                    previousCover.source = disc.shownArt;
+                                    disc.shownArt = source;
+                                    if (Theme.animated && previousCover.source.toString() !== ""
+                                            && previousCover.source.toString() !== source.toString())
+                                        dissolve.restart();
+                                    else
+                                        disc.reveal = 1;
+                                } else if (source.toString() === "") {
+                                    dissolve.stop();
+                                    disc.shownArt = "";
+                                    previousCover.source = "";
+                                    disc.reveal = 1;
+                                }
+                            }
+                        }
+                        Image {
+                            id: previousCover
+
+                            anchors.fill: parent
+                            sourceSize: Qt.size(root.discSize * 2, root.discSize * 2)
+                            fillMode: Image.PreserveAspectCrop
+                            visible: status === Image.Ready && (cover.status !== Image.Ready || disc.reveal < 1)
+                            opacity: cover.status === Image.Ready ? 1 - disc.reveal : 1
+                            scale: 1 + 0.08 * (1 - opacity)
+                        }
+                        NumberAnimation {
+                            id: dissolve
+
+                            target: disc
+                            property: "reveal"
+                            from: 0
+                            to: 1
+                            duration: 650
+                            easing.type: Easing.InOutQuad
                         }
                     }
 

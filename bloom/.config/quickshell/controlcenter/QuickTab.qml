@@ -27,7 +27,10 @@ Item {
     property string shownPage: ""
 
     implicitWidth: tiles.implicitWidth
-    implicitHeight: page !== "" && pages.item ? pages.item.implicitHeight : tiles.implicitHeight
+    // Keep both views covered until the outgoing page has finished sliding away.
+    implicitHeight: (slideIn.running || slideOut.running) && pages.item
+        ? Math.max(pages.item.implicitHeight, tiles.implicitHeight)
+        : shownPage !== "" && pages.item ? pages.item.implicitHeight : tiles.implicitHeight
     clip: true
     // Keys come here first (the pane in ControlCenter passes focus on)
     focus: true
@@ -205,6 +208,7 @@ Item {
         width: root.width
         x: root.page === "" ? 0 : -root.width
         opacity: root.page === "" ? 1 : 0
+        enabled: root.page === "" && !slideOut.running
         spacing: Theme.spacing.medium
 
         Behavior on x {
@@ -535,6 +539,16 @@ Item {
             : root.shownPage === "bluetooth" ? bluetoothPage
             : root.shownPage !== "" ? audioPage
             : null
+
+        // The device pages have transparent gaps. Move an opaque surface with
+        // them so the returning Quick tiles cannot show through those gaps.
+        Rectangle {
+            z: -1
+            width: pages.width
+            height: Math.max(root.height, pages.height)
+            visible: pages.active
+            color: Theme.surface
+        }
     }
 
     Anim {

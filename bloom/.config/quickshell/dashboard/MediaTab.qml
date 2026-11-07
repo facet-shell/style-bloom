@@ -30,18 +30,26 @@ RowLayout {
         return h > 0 ? `${h}:${two(m)}:${two(s % 60)}` : `${m}:${two(s % 60)}`;
     }
 
-    // Rounder while it plays, like the play button turning into a soft square
+    // Like the popup's record: pause holds the current angle, resume continues.
     ClippingRectangle {
+        id: disc
+
+        property url shownArt: ""
+        property real reveal: 1
+
         Layout.preferredWidth: 260
         Layout.preferredHeight: 260
         Layout.alignment: Qt.AlignVCenter
-        radius: root.playing ? Theme.rounding.drawer * 1.4 : Theme.rounding.large
+        radius: width / 2
         color: Theme.container
 
-        Behavior on radius {
-            Anim {
-                duration: Theme.anim.color
-            }
+        NumberAnimation on rotation {
+            from: 0
+            to: 360
+            duration: Theme.anim.slow * 7
+            loops: Animation.Infinite
+            running: Theme.animated && root.visible && root.player !== null
+            paused: running && !root.playing
         }
 
         Image {
@@ -53,13 +61,62 @@ RowLayout {
             fillMode: Image.PreserveAspectCrop
             asynchronous: true
             visible: status === Image.Ready
+            opacity: disc.reveal
+            scale: 0.96 + 0.04 * disc.reveal
+            onSourceChanged: previousCover.source = disc.shownArt
+            onStatusChanged: {
+                if (status === Image.Ready) {
+                    dissolve.stop();
+                    previousCover.source = disc.shownArt;
+                    disc.shownArt = source;
+                    if (Theme.animated && previousCover.source.toString() !== ""
+                            && previousCover.source.toString() !== source.toString())
+                        dissolve.restart();
+                    else
+                        disc.reveal = 1;
+                } else if (source.toString() === "") {
+                    dissolve.stop();
+                    disc.shownArt = "";
+                    previousCover.source = "";
+                    disc.reveal = 1;
+                }
+            }
+        }
+        Image {
+            id: previousCover
+
+            anchors.fill: parent
+            sourceSize: Qt.size(520, 520)
+            fillMode: Image.PreserveAspectCrop
+            visible: status === Image.Ready && (cover.status !== Image.Ready || disc.reveal < 1)
+            opacity: cover.status === Image.Ready ? 1 - disc.reveal : 1
+            scale: 1 + 0.08 * (1 - opacity)
+        }
+        NumberAnimation {
+            id: dissolve
+
+            target: disc
+            property: "reveal"
+            from: 0
+            to: 1
+            duration: 650
+            easing.type: Easing.InOutQuad
         }
         Icon {
             anchors.centerIn: parent
-            visible: cover.status !== Image.Ready
+            visible: cover.status !== Image.Ready && previousCover.status !== Image.Ready
             icon: root.player ? "music_note" : "music_off"
             size: Theme.icon.huge
             dim: true
+        }
+        Rectangle {
+            anchors.centerIn: parent
+            width: 26
+            height: width
+            radius: width / 2
+            color: AlbumColor.container
+            border.width: 2
+            border.color: Theme.alpha(Theme.textOnScrim, 0.2)
         }
     }
 
@@ -103,6 +160,14 @@ RowLayout {
             wrapMode: Text.WordWrap
             maximumLineCount: 2
             lineHeight: 1.1
+        }
+        StyledText {
+            Layout.fillWidth: true
+            visible: text !== ""
+            text: root.player?.trackAlbum ?? ""
+            dim: true
+            font.pixelSize: Theme.size.small
+            elide: Text.ElideRight
         }
         StyledText {
             Layout.fillWidth: true
@@ -157,6 +222,7 @@ RowLayout {
         }
 
         RowLayout {
+            Layout.fillWidth: true
             visible: root.player !== null
             spacing: 10
 
@@ -199,21 +265,15 @@ RowLayout {
                 onClicked: root.player.loopState = root.player.loopState === MprisLoopState.None ? MprisLoopState.Playlist
                     : root.player.loopState === MprisLoopState.Playlist ? MprisLoopState.Track : MprisLoopState.None
             }
-        }
-
-        RowLayout {
-            Layout.fillWidth: true
-            Layout.topMargin: Theme.spacing.small
-            visible: root.player !== null
-            spacing: 12
-
             Icon {
+                Layout.leftMargin: Theme.spacing.small
                 icon: (root.player?.volume ?? 0) <= 0 ? "volume_off" : "volume_up"
                 size: Theme.icon.normal
                 dim: true
             }
             Slider {
                 Layout.fillWidth: true
+                Layout.minimumWidth: 60
                 thin: true
                 disabled: !(root.player?.volumeSupported ?? false)
                 value: root.player?.volume ?? 0
@@ -233,12 +293,5 @@ RowLayout {
             }
         }
 
-        StyledText {
-            Layout.fillWidth: true
-            visible: text !== ""
-            text: root.player?.trackAlbum ? `♪ ${root.player.trackAlbum}` : ""
-            dim: true
-            font.pixelSize: Theme.size.small
-        }
     }
 }

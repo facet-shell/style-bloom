@@ -16,6 +16,15 @@ Scope {
 
     property bool hidden: false
     property bool open: false
+    property bool openedByHold: false
+
+    Connections {
+        target: Config
+        function onHotkeysOnHoldChanged() {
+            if (!Config.hotkeysOnHold && root.openedByHold)
+                root.hide();
+        }
+    }
 
     property real shown: open && !hidden ? 1 : 0
     Behavior on shown {
@@ -36,6 +45,7 @@ Scope {
 
     function hide() {
         open = false;
+        openedByHold = false;
     }
 
     onHiddenChanged: if (hidden) open = false
@@ -93,14 +103,19 @@ Scope {
         target: "hotkeys"
 
         function open(): void {
+            if (!Config.hotkeysOnHold || root.open)
+                return;
+            root.openedByHold = true;
             root.show();
         }
 
         function close(): void {
-            root.hide();
+            if (root.openedByHold)
+                root.hide();
         }
 
         function toggle(): void {
+            root.openedByHold = false;
             if (root.open)
                 root.hide();
             else
