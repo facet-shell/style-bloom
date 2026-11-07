@@ -30,7 +30,9 @@ is in [CONTRACT.md](CONTRACT.md). Ideas and bugs:
 ## Glint wallpapers
 
 With the matching core and CLI updates, install `quickshell hypr wallpaper` using
-Facet. The launcher's `wall` search and Super+W use Glint directly. Choose all
+Facet. The launcher's `wall` search and Super+W open the same Glint menu, at the same width.
+Library, general settings and authored wallpaper properties have separate tabs.
+Sound is controlled with the volume slider. Choose all
 displays or a connector, apply an installed wallpaper, and adjust FPS, scaling,
 sound, transitions and the selected wallpaper's authored properties in the native
 view. Common settings preserve different wallpapers on different displays; project
