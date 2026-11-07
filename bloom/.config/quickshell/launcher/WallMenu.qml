@@ -7,10 +7,8 @@ import qs.config
 import qs.services
 import qs.wallpapers
 
-// The big wallpaper menu ("wall" on its own): the picked one large with apply, tabs (all,
-// still, moving, your folder), a grid, and the options under it (fit, what moving ones do,
-// pause in games, colors from the wallpaper). The field keeps the keyboard; the launcher
-// sends the arrows here (move), Enter (apply) and Tab (nextTab).
+// Shared wallpaper menu: preview and library or settings beside it.
+// The launcher forwards arrow keys, Enter and Tab while its search field has focus.
 Item {
     id: root
 
@@ -19,6 +17,7 @@ Item {
     property string targetOutput: "*"
     property real factor: 1
     property string tab: "all"
+    property string page: "library"
     property int current: 0
     // The backend the moving ones come back with after "still frame"
     property string movingBackend: "both"
@@ -42,6 +41,7 @@ Item {
     // Opening: the one in use is picked
     function reset() {
         tab = "all";
+        page = "library";
         targetOutput = "*";
         touched = false;
         Qt.callLater(pickInUse);
@@ -55,7 +55,7 @@ Item {
 
     // Left/right one, up/down a row
     function move(step) {
-        if (list.length === 0)
+        if (list.length === 0 || (Wallpapers.useGlint && page !== "library"))
             return;
         touched = true;
         current = Math.max(0, Math.min(list.length - 1, current + step));
@@ -63,6 +63,11 @@ Item {
     }
 
     function nextTab(step) {
+        if (Wallpapers.useGlint) {
+            const pages = ["library", "general", "wallpaper"];
+            page = pages[(pages.indexOf(page) + step + pages.length) % pages.length];
+            return;
+        }
         const at = tabs.findIndex(t => t.key === tab);
         tab = tabs[(at + step + tabs.length) % tabs.length].key;
     }
@@ -224,6 +229,12 @@ Item {
                         font.pixelSize: Theme.size.small
                     }
                     Button {
+                        visible: Wallpapers.useGlint && root.selected !== null
+                        compact: true
+                        icon: "tune"
+                        onClicked: root.page = "wallpaper"
+                    }
+                    Button {
                         id: applyButton
 
                         visible: root.selected !== null
@@ -257,6 +268,18 @@ Item {
             spacing: Theme.spacing.medium
 
             Tabs {
+                visible: Wallpapers.useGlint
+                model: [
+                    { key: "library", label: "Library", icon: "wallpaper" },
+                    { key: "general", label: "Settings", icon: "tune" },
+                    { key: "wallpaper", label: "Wallpaper", icon: "settings" }
+                ]
+                current: root.page
+                onSelected: key => root.page = key
+            }
+
+            Tabs {
+                visible: !Wallpapers.useGlint || root.page === "library"
                 model: root.tabs
                 current: root.tab
                 onSelected: key => root.tab = key
@@ -269,6 +292,7 @@ Item {
 
                 GridView {
                     id: grid
+                    visible: !Wallpapers.useGlint || root.page === "library"
 
                     anchors.fill: parent
                     // Room for the picked one's ring and the hover lift
@@ -312,10 +336,25 @@ Item {
                     }
                 }
 
+                Flickable {
+                    anchors.fill: parent
+                    visible: Wallpapers.useGlint && root.page !== "library"
+                    contentHeight: settingsPanel.implicitHeight
+                    clip: true
+                    boundsBehavior: Flickable.StopAtBounds
+                    GlintSettings {
+                        id: settingsPanel
+                        width: parent.width
+                        section: root.page
+                        output: root.targetOutput
+                        projectPath: root.selected?.path ?? ""
+                    }
+                }
+
                 StyledText {
                     anchors.centerIn: parent
                     width: parent.width - 40
-                    visible: root.list.length === 0
+                    visible: root.list.length === 0 && (!Wallpapers.useGlint || root.page === "library")
                     horizontalAlignment: Text.AlignHCenter
                     wrapMode: Text.Wrap
                     elide: Text.ElideNone
@@ -430,12 +469,12 @@ Item {
             }
         }
 
-        GlintSettings {
+        RowLayout {
             Layout.columnSpan: 2
             Layout.fillWidth: true
-            visible: Wallpapers.useGlint
-            output: root.targetOutput
-            projectPath: root.selected?.path ?? ""
+            visible: Wallpapers.useGlint && !Wallpapers.glintActive
+            StyledText { Layout.fillWidth: true; text: Wallpapers.glintError || "Glint is not connected"; dim: true }
+            Button { text: "start engine"; icon: "play_arrow"; onClicked: Wallpapers.startGlint() }
         }
     }
 }

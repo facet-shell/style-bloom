@@ -163,6 +163,7 @@ ShellRoot {
     // Super+W
     WallpaperApp {
         id: wallpapers
+        controller: launcher
     }
 
     // AULA F75 lighting, Fn keys and per-key colors (Super+K, keyboard package)
