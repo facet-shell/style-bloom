@@ -12,7 +12,7 @@ ColumnLayout {
     property string output: "*"
     property string projectPath: ""
     property string section: "all"
-    readonly property var common: Wallpapers.optionsFor(output)
+    readonly property var common: Wallpapers.globalOptions()
     readonly property var properties: Wallpapers.propertiesFor(output, projectPath)
     spacing: Theme.spacing.small
 
@@ -25,15 +25,69 @@ ColumnLayout {
     }
 
     component Choice: Controls.ComboBox {
+        id: choice
+        implicitHeight: 36
+        leftPadding: 14
+        rightPadding: 38
         font.family: Theme.font
         font.pixelSize: Theme.size.small
-        palette.window: Theme.container
-        palette.base: Theme.high
-        palette.button: Theme.high
-        palette.buttonText: Theme.text
-        palette.text: Theme.text
-        palette.highlight: Theme.primary
-        palette.highlightedText: Theme.textOnPrimary
+        background: Rectangle {
+            radius: height / 2
+            color: choice.hovered ? Theme.highest : Theme.high
+            border.width: choice.visualFocus ? 2 : 0
+            border.color: Theme.primary
+        }
+        contentItem: Text {
+            text: choice.displayText
+            font: choice.font
+            color: Theme.text
+            verticalAlignment: Text.AlignVCenter
+            elide: Text.ElideRight
+        }
+        indicator: Icon {
+            x: choice.width - width - 12
+            anchors.verticalCenter: parent.verticalCenter
+            icon: choice.popup.visible ? "expand_less" : "expand_more"
+            size: Theme.icon.small
+            color: choice.visualFocus ? Theme.primary : Theme.dim
+        }
+        delegate: Controls.ItemDelegate {
+            required property int index
+            width: choice.width - 12
+            implicitHeight: 36
+            highlighted: choice.highlightedIndex === index
+            contentItem: Text {
+                text: choice.textAt(index)
+                font: choice.font
+                color: highlighted ? Theme.primary : Theme.text
+                verticalAlignment: Text.AlignVCenter
+                elide: Text.ElideRight
+                leftPadding: 10
+            }
+            background: Rectangle {
+                radius: Theme.rounding.normal
+                color: parent.highlighted ? Theme.primaryContainer : parent.hovered ? Theme.highest : "transparent"
+            }
+        }
+        popup: Controls.Popup {
+            y: choice.height + 6
+            width: choice.width
+            padding: 6
+            implicitHeight: Math.min(contentItem.implicitHeight + 12, 220)
+            contentItem: ListView {
+                implicitHeight: contentHeight
+                clip: true
+                model: choice.popup.visible ? choice.delegateModel : null
+                currentIndex: choice.highlightedIndex
+                boundsBehavior: Flickable.StopAtBounds
+                Controls.ScrollIndicator.vertical: Controls.ScrollIndicator {}
+            }
+            background: Rectangle {
+                radius: Theme.rounding.normal
+                color: Theme.container
+                border.color: Theme.outline
+            }
+        }
     }
 
     RowLayout {
@@ -49,6 +103,15 @@ ColumnLayout {
             text: "start engine"
             onClicked: Wallpapers.startGlint()
         }
+    }
+
+    StyledText {
+        visible: root.section !== "wallpaper"
+        Layout.fillWidth: true
+        text: "Global settings · all displays and wallpapers"
+        dim: true
+        font.pixelSize: Theme.size.small
+        wrapMode: Text.Wrap
     }
 
     GridLayout {
@@ -101,6 +164,7 @@ ColumnLayout {
             Layout.fillWidth: true
             spacing: Theme.spacing.small
             Choice {
+                objectName: "glintScalingChoice"
                 Layout.fillWidth: true
                 Layout.maximumWidth: 220
                 model: ["fill", "fit", "center", "tile", "stretch"]

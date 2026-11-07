@@ -78,7 +78,7 @@ ShellRoot {
             test.checkSettingsLayout();
             if (test.phase === 0) {
                 if (Theme.frame === undefined) { console.error("Structural theme frame token missing"); Qt.exit(1); return; }
-                if (!Wallpapers.glintActive || controls.properties.length !== 5 || !controls.common.mixed.fps) {
+                if (!Wallpapers.glintActive || controls.properties.length !== 5 || controls.common.fps !== 60 || controls.common.mixed.fps) {
                     console.error("Native settings missing", Wallpapers.glintActive, controls.properties.length);
                     Qt.exit(1);
                     return;
@@ -93,9 +93,15 @@ ShellRoot {
                 wallpaperShortcut.toggle();
                 if (sharedLauncher.open) { console.error("Shared menu toggle failed"); Qt.exit(1); return; }
                 narrowControls.width = 360;
-                Wallpapers.setDisplaySetting("*", "fps", 120);
+                const scaling = findItem(narrowControls, "glintScalingChoice");
+                if (!scaling || scaling.height < 34 || scaling.background.radius <= 0) { console.error("Unstyled scaling control"); Qt.exit(1); return; }
+                scaling.popup.open();
+                Wallpapers.setDisplaySetting("DP-2", "fps", 120);
             } else if (test.phase === 1) {
                 if (controls.common.fps !== 120 || controls.common.mixed.fps) { console.error("Native FPS binding did not update"); Qt.exit(1); return; }
+                const scaling = findItem(narrowControls, "glintScalingChoice");
+                if (!scaling.popup.visible || scaling.popup.height < 100) { console.error("Scaling choices missing"); Qt.exit(1); return; }
+                scaling.popup.close();
                 narrowControls.width = 620;
                 menu.page = "library";
                 menu.current = menu.list.findIndex(w => w.id === "42");
