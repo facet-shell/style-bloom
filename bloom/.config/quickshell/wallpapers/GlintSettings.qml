@@ -51,19 +51,30 @@ ColumnLayout {
         }
     }
 
-    Flow {
+    GridLayout {
+        objectName: "glintGeneralSettings"
         Layout.fillWidth: true
-        spacing: Theme.spacing.medium
+        columns: 2
+        columnSpacing: Theme.spacing.medium
+        rowSpacing: Theme.spacing.medium
         visible: root.section !== "wallpaper"
         enabled: Wallpapers.glintActive && root.common.count > 0
         opacity: enabled ? 1 : 0.5
 
+        StyledText {
+            Layout.preferredWidth: 100
+            text: "FPS"
+            dim: true
+            font.pixelSize: Theme.size.small
+        }
         RowLayout {
+            Layout.fillWidth: true
             spacing: Theme.spacing.small
-            StyledText { text: "FPS"; dim: true; font.pixelSize: Theme.size.small }
             TextBox {
                 id: fpsField
-                implicitWidth: 84
+                Layout.preferredWidth: 84
+                Layout.minimumWidth: 84
+                Layout.maximumWidth: 84
                 Binding {
                     target: fpsField
                     property: "text"
@@ -77,25 +88,42 @@ ColumnLayout {
                         Wallpapers.setDisplaySetting(root.output, "fps", Number(text));
                 }
             }
-            StyledText { text: "0 = display rate"; dim: true; font.pixelSize: Theme.size.tiny }
+            StyledText { Layout.fillWidth: true; text: "0 = display rate"; dim: true; wrapMode: Text.Wrap; font.pixelSize: Theme.size.tiny }
+        }
+
+        StyledText {
+            Layout.preferredWidth: 100
+            text: "Scaling"
+            dim: true
+            font.pixelSize: Theme.size.small
         }
         RowLayout {
+            Layout.fillWidth: true
             spacing: Theme.spacing.small
-            StyledText { text: "fit"; dim: true; font.pixelSize: Theme.size.small }
             Choice {
-                implicitWidth: 130
+                Layout.fillWidth: true
+                Layout.maximumWidth: 220
                 model: ["fill", "fit", "center", "tile", "stretch"]
                 currentIndex: root.common.mixed.scaling ? -1 : model.indexOf(root.common.scaling)
                 displayText: currentIndex < 0 ? "mixed" : currentText
                 onActivated: index => Wallpapers.setDisplaySetting(root.output, "scaling", model[index])
             }
         }
+
+        StyledText {
+            Layout.preferredWidth: 100
+            text: "Sound"
+            dim: true
+            font.pixelSize: Theme.size.small
+        }
         RowLayout {
+            Layout.fillWidth: true
             spacing: Theme.spacing.small
-            StyledText { text: "sound"; dim: true; font.pixelSize: Theme.size.small }
             Slider {
                 id: volume
-                implicitWidth: 110
+                Layout.fillWidth: true
+                Layout.minimumWidth: 60
+                Layout.maximumWidth: 220
                 thin: true
                 property real staged: root.common.volume
                 value: volumeSave.running ? staged : root.common.volume
@@ -107,20 +135,30 @@ ColumnLayout {
                 }
             }
             StyledText {
+                Layout.preferredWidth: 48
+                horizontalAlignment: Text.AlignRight
                 text: root.common.mixed.volume ? "mixed" : `${Math.round(root.common.volume * 100)}%`
                 font.pixelSize: Theme.size.small
             }
         }
+
+        StyledText {
+            Layout.preferredWidth: 100
+            text: "Transition"
+            dim: true
+            font.pixelSize: Theme.size.small
+        }
         RowLayout {
+            Layout.fillWidth: true
             spacing: Theme.spacing.small
-            StyledText { text: "fade"; dim: true; font.pixelSize: Theme.size.small }
             Switch {
                 checked: root.common.transition === "fade"
                 onToggled: on => Wallpapers.setDisplaySetting(root.output, "transition", on ? "fade" : "none")
             }
             TextBox {
                 id: durationField
-                implicitWidth: 80
+                Layout.preferredWidth: 80
+                Layout.maximumWidth: 80
                 placeholder: root.common.mixed.duration ? "mixed" : "ms"
                 input.validator: IntValidator { bottom: 0; top: 10000 }
                 Binding {
@@ -136,12 +174,20 @@ ColumnLayout {
             }
             StyledText { text: "ms"; dim: true; font.pixelSize: Theme.size.small }
         }
+
+        StyledText {
+            Layout.preferredWidth: 100
+            text: "Background"
+            dim: true
+            font.pixelSize: Theme.size.small
+        }
         RowLayout {
+            Layout.fillWidth: true
             spacing: Theme.spacing.small
-            StyledText { text: "background"; dim: true; font.pixelSize: Theme.size.small }
             TextBox {
                 id: backgroundField
-                implicitWidth: 110
+                Layout.fillWidth: true
+                Layout.maximumWidth: 220
                 placeholder: root.common.mixed.color ? "mixed" : "#000000"
                 Binding {
                     target: backgroundField

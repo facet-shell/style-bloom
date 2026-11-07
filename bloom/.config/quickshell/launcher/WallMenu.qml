@@ -44,6 +44,7 @@ Item {
         page = "library";
         targetOutput = "*";
         touched = false;
+        Wallpapers.refresh();
         Qt.callLater(pickInUse);
     }
 
@@ -89,6 +90,11 @@ Item {
     }
 
     // After the list followed the new tab
+    onInUseChanged: {
+        touched = false;
+        Qt.callLater(pickInUse);
+    }
+    onTargetOutputChanged: Qt.callLater(pickInUse)
     onTabChanged: Qt.callLater(pickInUse)
     onListChanged: {
         if (!touched)
