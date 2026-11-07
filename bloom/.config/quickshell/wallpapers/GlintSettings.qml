@@ -11,6 +11,7 @@ ColumnLayout {
 
     property string output: "*"
     property string projectPath: ""
+    property string section: "all"
     readonly property var common: Wallpapers.optionsFor(output)
     readonly property var properties: Wallpapers.propertiesFor(output, projectPath)
     spacing: Theme.spacing.small
@@ -53,6 +54,7 @@ ColumnLayout {
     Flow {
         Layout.fillWidth: true
         spacing: Theme.spacing.medium
+        visible: root.section !== "wallpaper"
         enabled: Wallpapers.glintActive && root.common.count > 0
         opacity: enabled ? 1 : 0.5
 
@@ -101,18 +103,13 @@ ColumnLayout {
                 Timer {
                     id: volumeSave
                     interval: 250
-                    onTriggered: Wallpapers.setDisplaySetting(root.output, "volume", volume.staged)
+                    onTriggered: Wallpapers.setDisplaySettings(root.output, { volume: volume.staged, mute: false })
                 }
             }
             StyledText {
                 text: root.common.mixed.volume ? "mixed" : `${Math.round(root.common.volume * 100)}%`
                 font.pixelSize: Theme.size.small
             }
-            Switch {
-                checked: !root.common.mixed.mute && root.common.mute
-                onToggled: on => Wallpapers.setDisplaySetting(root.output, "mute", on)
-            }
-            StyledText { text: "mute"; dim: true; font.pixelSize: Theme.size.small }
         }
         RowLayout {
             spacing: Theme.spacing.small
@@ -159,6 +156,7 @@ ColumnLayout {
 
     StyledText {
         Layout.fillWidth: true
+        visible: root.section !== "general"
         text: root.properties.length ? "Wallpaper settings · changes apply to matching projects on the selected displays"
             : "Apply this wallpaper on the selected displays to edit its project settings"
         dim: true
@@ -167,6 +165,7 @@ ColumnLayout {
     }
 
     Flickable {
+        visible: root.section !== "general"
         Layout.fillWidth: true
         Layout.preferredHeight: Math.min(propertiesColumn.implicitHeight, 180)
         contentHeight: propertiesColumn.implicitHeight
