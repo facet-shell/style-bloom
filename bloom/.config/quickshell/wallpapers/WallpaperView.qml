@@ -219,7 +219,7 @@ ColumnLayout {
                     wrapMode: Text.WordWrap
                     dim: true
                     font.pixelSize: Theme.size.small
-                    text: !Wallpapers.available ? "The wallpaper package is not installed · run: facet install wallpaper"
+                    text: !Wallpapers.available ? (Wallpapers.useGlint ? "Glint is not connected · start it below" : "The wallpaper package is not installed · run: facet install wallpaper")
                         : Wallpapers.loading && Wallpapers.items.length === 0 ? "Looking for wallpapers…"
                         : Wallpapers.items.length === 0 ? "No wallpapers yet · put files in ~/Pictures/wallpapers or subscribe in the workshop"
                         : root.shown.length === 0 ? "Nothing matches"
@@ -478,6 +478,7 @@ ColumnLayout {
 
     Flow {
         Layout.fillWidth: true
+        visible: !Wallpapers.useGlint
         spacing: Theme.spacing.medium
 
         RowLayout {
@@ -588,10 +589,18 @@ ColumnLayout {
         }
     }
 
+    GlintSettings {
+        Layout.fillWidth: true
+        visible: Wallpapers.useGlint
+        output: root.target
+        projectPath: root.picked?.path ?? ""
+    }
+
     StyledText {
         Layout.fillWidth: true
         dim: true
         font.pixelSize: Theme.size.tiny
-        text: `${root.backendHints[Wallpapers.settings.backend] ?? ""} · ↑↓ move · tab next · enter apply · esc close`
+        text: Wallpapers.useGlint ? "Glint · ↑↓ move · tab next · enter apply · esc close"
+            : `${root.backendHints[Wallpapers.settings.backend] ?? ""} · ↑↓ move · tab next · enter apply · esc close`
     }
 }

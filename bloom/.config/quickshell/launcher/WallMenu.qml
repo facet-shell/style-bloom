@@ -5,6 +5,7 @@ import Quickshell.Widgets
 import qs.components
 import qs.config
 import qs.services
+import qs.wallpapers
 
 // The big wallpaper menu ("wall" on its own): the picked one large with apply, tabs (all,
 // still, moving, your folder), a grid, and the options under it (fit, what moving ones do,
@@ -15,6 +16,7 @@ Item {
 
     property Item modes: null
     property string screenName: ""
+    property string targetOutput: "*"
     property real factor: 1
     property string tab: "all"
     property int current: 0
@@ -32,13 +34,15 @@ Item {
     ]
     readonly property var list: modes ? modes.wallFilter(Wallpapers.items, tab, "") : []
     readonly property var selected: list.length > 0 ? list[Math.min(current, list.length - 1)] : null
-    readonly property string inUse: Wallpapers.current(screenName)
+    readonly property string inUse: Wallpapers.current(targetOutput)
     readonly property bool selectedInUse: selected !== null && selected.path === inUse
     readonly property string folder: `${Quickshell.env("HOME")}/Pictures/wallpapers`
+
 
     // Opening: the one in use is picked
     function reset() {
         tab = "all";
+        targetOutput = "*";
         touched = false;
         Qt.callLater(pickInUse);
     }
@@ -67,7 +71,7 @@ Item {
     function apply(onlyHere) {
         if (!selected)
             return;
-        Wallpapers.apply(selected.path, onlyHere ? screenName : "*");
+        Wallpapers.apply(selected.path, onlyHere ? screenName : targetOutput);
         bounce.restart();
     }
 
@@ -76,7 +80,7 @@ Item {
             return "";
         if (w.source === "file" && w.kind === "image")
             return "your folder";
-        return w.kind === "image" ? "still" : `moving · ${w.kind === "scene" ? "engine" : w.kind === "video" ? "mpv" : "web"}`;
+        return w.kind === "image" ? "still" : `moving · ${w.kind === "scene" ? "engine" : w.kind === "video" ? "video" : "web"}`;
     }
 
     // After the list followed the new tab
@@ -88,16 +92,6 @@ Item {
             current = Math.max(0, list.length - 1);
     }
     onSelectedChanged: pop.restart()
-
-    Connections {
-        target: Wallpapers
-
-        function onSettingsChanged() {
-            const b = Wallpapers.settings.backend ?? "both";
-            if (b !== "image")
-                root.movingBackend = b;
-        }
-    }
 
     implicitWidth: 1144 * factor
     implicitHeight: layout.implicitHeight
@@ -326,7 +320,7 @@ Item {
                     wrapMode: Text.Wrap
                     elide: Text.ElideNone
                     dim: true
-                    text: !Wallpapers.available ? "frame-wallpaper is not installed (the wallpaper package)"
+                    text: !Wallpapers.available ? (Wallpapers.useGlint ? "Glint is not connected · start it below" : "frame-wallpaper is not installed (the wallpaper package)")
                         : Wallpapers.loading ? "looking for wallpapers …"
                         : Wallpapers.items.length === 0 ? "no wallpapers yet · put files in ~/Pictures/wallpapers or subscribe in the workshop"
                         : "none in this tab"
@@ -340,6 +334,7 @@ Item {
             Layout.columnSpan: 2
             Layout.fillWidth: true
             spacing: Theme.spacing.medium
+            visible: !Wallpapers.useGlint
 
             StyledText {
                 Layout.leftMargin: 6
@@ -397,6 +392,50 @@ Item {
                 text: "your folder"
                 onClicked: Quickshell.execDetached(["sh", "-c", 'mkdir -p "$0" && exec xdg-open "$0"', root.folder])
             }
+        }
+
+        RowLayout {
+            Layout.columnSpan: 2
+            Layout.fillWidth: true
+            visible: Wallpapers.useGlint
+
+            Chip {
+                icon: "open_in_new"
+                text: "Steam Workshop"
+                onClicked: Quickshell.execDetached(["xdg-open", "steam://openurl/https://steamcommunity.com/app/431960/workshop/"])
+            }
+
+            Chip {
+                icon: "refresh"
+                text: "refresh library"
+                onClicked: Wallpapers.refresh()
+            }
+
+            Item { Layout.fillWidth: true }
+        }
+
+        Flow {
+            Layout.columnSpan: 2
+            Layout.fillWidth: true
+            visible: Wallpapers.useGlint
+            spacing: Theme.spacing.small
+            Repeater {
+                model: ["*"].concat(Wallpapers.glintOutputs.map(output => output.name))
+                Chip {
+                    required property string modelData
+                    text: modelData === "*" ? "all displays" : modelData
+                    selected: root.targetOutput === modelData
+                    onClicked: root.targetOutput = modelData
+                }
+            }
+        }
+
+        GlintSettings {
+            Layout.columnSpan: 2
+            Layout.fillWidth: true
+            visible: Wallpapers.useGlint
+            output: root.targetOutput
+            projectPath: root.selected?.path ?? ""
         }
     }
 }

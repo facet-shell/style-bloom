@@ -26,3 +26,19 @@ Files in the package folder are linked into your home with GNU Stow; the theme f
 `templates/` and is written by `facet theme` in the active theme. How the parts fit together
 is in [CONTRACT.md](CONTRACT.md). Ideas and bugs:
 [the board](https://github.com/orgs/facet-shell/projects/1).
+
+## Glint wallpapers
+
+With the matching core and CLI updates, install `quickshell hypr wallpaper` using
+Facet. The launcher's `wall` search and Super+W use Glint directly. Choose all
+displays or a connector, apply an installed wallpaper, and adjust FPS, scaling,
+sound, transitions and the selected wallpaper's authored properties in the native
+view. Common settings preserve different wallpapers on different displays; project
+settings apply only to displays showing the selected project.
+
+The launcher opens Steam Workshop for discovery and refreshes locally installed
+items. It does not embed the Steam catalog or download interface. Glint's separate
+terminal interface remains available through `glint tui`.
+
+Run the offscreen native-view smoke test from core with
+`python3 tests/glint/run-smoke.py --bloom /path/to/style-bloom`.
