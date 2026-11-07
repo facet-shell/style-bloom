@@ -185,7 +185,7 @@ Singleton {
     }
 
     // The frame around each screen: the bar is its top edge
-    readonly property QtObject facet: QtObject {
+    readonly property QtObject frame: QtObject {
         readonly property int bar: 52
         readonly property int border: 10
     }

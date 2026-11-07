@@ -76,7 +76,7 @@ Scope {
             readonly property var mon: CanvasLayout.enabled ? CanvasLayout.monitor(modelData.name) : null
             readonly property var view: mon ? CanvasLayout.viewOf(mon) : null
             readonly property var pend: CanvasLayout.pending[modelData.name] ?? null
-            // The toolbar keeps off the facet: inside the hole, or near the edge in a game
+            // The toolbar keeps off the frame: inside the hole, or near the edge in a game
             readonly property real edgeGap: (Bloom.frameAway ? 0 : Theme.frame.border) + Theme.spacing.huge
 
             // Right drag: steps to Hyprland at most every 40 ms, like the canvas desk

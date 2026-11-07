@@ -366,7 +366,7 @@ Scope {
     PanelWindow {
         id: window
 
-        // The hole of the facet: the overview lives in it; in a game the frame is away and
+        // The hole of the frame: the overview lives in it; in a game the frame is away and
         // the whole screen is the hole
         readonly property bool away: Bloom.frameAway
         readonly property real holeX: away ? 0 : Theme.frame.border

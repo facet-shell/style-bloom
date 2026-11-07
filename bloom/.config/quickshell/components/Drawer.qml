@@ -44,7 +44,7 @@ import qs.config
 //   contentShown  0..1, the content's fade (follows progress, a little later)
 //   signal dismissed()  Esc, or a click outside with closeOnOutside; set open = false there
 //
-// The window never covers the facet: it is placed inside the hole (it respects the frame's
+// The window never covers the frame: it is placed inside the hole (it respects the frame's
 // exclusive zones), its content slides in from that edge clipped by the window, so it looks
 // as if it came from under the frame on any layer.
 PanelWindow {

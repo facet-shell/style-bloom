@@ -4,6 +4,7 @@ import Quickshell
 import qs.launcher
 import qs.wallpapers
 import qs.services
+import qs.config
 
 ShellRoot {
     id: test
@@ -42,6 +43,7 @@ ShellRoot {
         interval: 500
         onTriggered: {
             if (test.phase === 0) {
+                if (Theme.frame === undefined) { console.error("Structural theme frame token missing"); Qt.exit(1); return; }
                 if (!Wallpapers.glintActive || controls.properties.length !== 5 || !controls.common.mixed.fps) {
                     console.error("Native settings missing", Wallpapers.glintActive, controls.properties.length);
                     Qt.exit(1);
