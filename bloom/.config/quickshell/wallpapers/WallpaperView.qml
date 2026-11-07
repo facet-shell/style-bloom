@@ -585,7 +585,7 @@ ColumnLayout {
         Chip {
             text: "your folder"
             icon: "folder_open"
-            onClicked: Quickshell.execDetached(["sh", "-c", 'mkdir -p "$1" && xdg-open "$1"', "frame-wallpaper", root.folder])
+            onClicked: Quickshell.execDetached(["sh", "-c", 'mkdir -p "$1" && xdg-open "$1"', "facet-wallpaper", root.folder])
         }
     }
 

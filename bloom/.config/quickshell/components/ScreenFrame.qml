@@ -70,7 +70,7 @@ Scope {
         implicitWidth: edge === "left" || edge === "right" ? size : 0
         implicitHeight: edge === "top" || edge === "bottom" ? size : 0
         WlrLayershell.layer: WlrLayer.Top
-        WlrLayershell.namespace: "qs-frame-zone"
+        WlrLayershell.namespace: "qs-facet-zone"
         WlrLayershell.keyboardFocus: WlrKeyboardFocus.None
         anchors {
             top: zone.edge !== "bottom"
@@ -153,7 +153,7 @@ Scope {
                 exclusionMode: ExclusionMode.Ignore
                 implicitHeight: 1
                 WlrLayershell.layer: WlrLayer.Overlay
-                WlrLayershell.namespace: "qs-frame-peek"
+                WlrLayershell.namespace: "qs-facet-peek"
                 WlrLayershell.keyboardFocus: WlrKeyboardFocus.None
                 anchors {
                     top: true

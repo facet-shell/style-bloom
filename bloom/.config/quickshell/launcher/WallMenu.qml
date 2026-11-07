@@ -359,7 +359,7 @@ Item {
                     wrapMode: Text.Wrap
                     elide: Text.ElideNone
                     dim: true
-                    text: !Wallpapers.available ? (Wallpapers.useGlint ? "Glint is not connected · start it below" : "frame-wallpaper is not installed (the wallpaper package)")
+                    text: !Wallpapers.available ? (Wallpapers.useGlint ? "Glint is not connected · start it below" : "facet-wallpaper is not installed (the wallpaper package)")
                         : Wallpapers.loading ? "looking for wallpapers …"
                         : Wallpapers.items.length === 0 ? "no wallpapers yet · put files in ~/Pictures/wallpapers or subscribe in the workshop"
                         : "none in this tab"
@@ -425,7 +425,7 @@ Item {
                 Layout.fillWidth: true
             }
 
-            // frame-wallpaper reads this folder; there is no list of more folders yet
+            // facet-wallpaper reads this folder; there is no list of more folders yet
             Chip {
                 icon: "folder_open"
                 text: "your folder"

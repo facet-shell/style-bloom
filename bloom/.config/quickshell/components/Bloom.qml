@@ -35,7 +35,7 @@ Singleton {
     function preview(what) {
         if (what === "notification")
             Notifications.push({
-                app: "frameshell",
+                app: "facet",
                 title: "A test notification",
                 body: "This is how a notification looks with your settings. The buttons do nothing.",
                 icon: "notifications",

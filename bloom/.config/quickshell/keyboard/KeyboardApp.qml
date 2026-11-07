@@ -8,9 +8,9 @@ import qs.services
 
 // The keyboard app (Super+K): lighting, Fn keys and per-key colors (KeyboardView), a rounded
 // window in the middle of the hole over the dimmed desktop. The Keyboard service and
-// frame-keyboard (keyboard package) do the work.
+// facet-keyboard (keyboard package) do the work.
 // `qs ipc call keyboard toggle`, also open and close; `mods` comes from Hyprland while
-// modifier keys are held (hypr/frame/hotkeys.lua).
+// modifier keys are held (hypr/facet/hotkeys.lua).
 Scope {
     id: root
 
@@ -100,7 +100,7 @@ Scope {
             root.hide();
         }
 
-        // From Hyprland while modifier keys are held (hypr/frame/hotkeys.lua): "super+shift", "" on release
+        // From Hyprland while modifier keys are held (hypr/facet/hotkeys.lua): "super+shift", "" on release
         function mods(text: string): void {
             Keyboard.setHeldMods(text);
         }

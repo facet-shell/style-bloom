@@ -81,7 +81,7 @@ Item {
         anchors.centerIn: parent
         visible: root.list.length === 0
         dim: true
-        text: !Wallpapers.available ? "frame-wallpaper is not installed (the wallpaper package)"
+        text: !Wallpapers.available ? "facet-wallpaper is not installed (the wallpaper package)"
             : Wallpapers.loading ? "looking for wallpapers …"
             : `no wallpaper matches “${root.word}” · wall alone shows all`
     }

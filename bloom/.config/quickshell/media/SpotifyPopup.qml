@@ -113,7 +113,7 @@ Scope {
         bloom();
         if (!spotify || spotify.trackTitle === "") {
             title = "Test song";
-            artist = "frameshell";
+            artist = "facet";
             art = "";
         }
     }

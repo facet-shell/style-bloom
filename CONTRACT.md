@@ -7,12 +7,12 @@ how a part behaves in a game, and the rules. Read this, the mockup
 
 ## 1. How bloom is put together
 
-- **core** (`frame-shell/shell`, repo `facet-shell/core`) holds what every style shares:
+- **core** (`facet-shell/shell`, repo `facet-shell/core`) holds what every style shares:
   `services/*` (singletons: Notifications, DiscordBridge, SteamBridge, Spotify, GoXLR, Audio, Channels,
   Toggles, Recorder, Clipboard, Timers, Weather, SystemStats, Tasks, Claude, Updates,
   Wallpapers, CanvasLayout, Binds, Editor, Keyboard, Network …), `services/Core.qml` (startup
   and the media keys), `config/Config.qml` (all settings, the user's changes in
-  `~/.config/frameshell/shell.json`).
+  `~/.config/facet/shell.json`).
 - **style-bloom** (this repo) is one Stow package, `bloom/.config/quickshell/`, linked with
   `stow --no-folding` into the same `~/.config/quickshell` as core. So imports are
   `qs.components`, `qs.config`, `qs.services`, `qs.bar` …, one module per folder.
@@ -63,7 +63,7 @@ From the owner, exactly:
 - LF line endings (`.gitattributes` has `* text=auto eol=lf`; check with `git ls-files --eol`).
 - Build things yourself before adding a package. Few dependencies; a new one goes into `DEPS`
   in cli/facet with a comment why.
-- Do not touch the website, the `frameshell` docs repo, `org-profile` or `site`.
+- Do not touch the website, the `facet` docs repo, `org-profile` or `site`.
 
 For the code:
 
@@ -80,7 +80,7 @@ For the code:
 - **Icons** are Material Symbols names in `Icon` (ligatures), not Nerd Font code points.
 - **No workspace dots and no window list** anywhere: the canvas overview is where windows are.
 - Layer namespaces keep the tui names where they exist (`qs-launcher` is checked by
-  `hypr/frame/shell.lua`); new ones are `qs-<part>`.
+  `hypr/facet/shell.lua`); new ones are `qs-<part>`.
 - Settings are read from `Config.*` and written with `Config.set(key, value)` /
   `Config.reset(key)`; a new key gets a comment like its neighbours and a line in section 8.
 - Long work goes in services (core), not in the UI. A part shows; a service knows.
@@ -276,7 +276,7 @@ HolePopup {
 |---|---|---|
 | `corners` | `"round"` | `"small"`, `"round"`, `"veryRound"`: `Theme.cornerScale` 0.55 / 1 / 1.3 |
 | `animations` | `"full"` | `"full"`, `"calm"` (no overshoot), `"off"` |
-| `colorMode` | `"theme"` | `"theme"` or `"dynamic"`: tones from `~/.local/state/frameshell/bloom-dynamic.json` (`{ "tones": { … } }`, same keys as the template; nothing writes it yet) |
+| `colorMode` | `"theme"` | `"theme"` or `"dynamic"`: tones from `~/.local/state/facet/bloom-dynamic.json` (`{ "tones": { … } }`, same keys as the template; nothing writes it yet) |
 | `frameHidesInGame` | `true` | frame and bar step away in game mode |
 | `notificationSize` | `1` | factor (0.85 small, 1 normal, 1.15 large) |
 | `osdSize` | `1` | factor |
@@ -305,7 +305,7 @@ New service in core: `Network` (`type` "ethernet" / "wifi" / "", `name`, `streng
 
 ## 9. What each part must keep (shell.qml and Hyprland call these)
 
-`qs ipc call <target> <function>`: Hyprland binds them (`hypr/frame/*.lua`), so names and
+`qs ipc call <target> <function>`: Hyprland binds them (`hypr/facet/*.lua`), so names and
 signatures stay exactly as here.
 
 | Part file | IPC target: functions | Public API used by shell.qml |

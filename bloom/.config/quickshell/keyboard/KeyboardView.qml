@@ -6,7 +6,7 @@ import qs.services
 
 // The keyboard app's content: the device and the tabs the board can do on top (lighting, fn
 // keys, colors), the picked board drawn with round keys (its rows come from the board registry,
-// frame-keyboard board --json), the tab's controls, and what the last command sent (in a dry
+// facet-keyboard board --json), the tab's controls, and what the last command sent (in a dry
 // run: would have sent). Keys carry their physical id (US names) and a QWERTZ label.
 FocusScope {
     id: root
@@ -433,7 +433,7 @@ FocusScope {
                     Layout.fillWidth: true
                     dim: true
                     font.pixelSize: Theme.size.small
-                    text: !Keyboard.available ? "frame-keyboard is not in ~/.local/bin (facet add keyboard)"
+                    text: !Keyboard.available ? "facet-keyboard is not in ~/.local/bin (facet add keyboard)"
                         : Keyboard.connected ? `usb cable${Keyboard.info?.node ? " · " + Keyboard.info.node : ""}`
                         : Keyboard.dongleOnly ? "only the 2.4 GHz dongle is there · plug the cable in"
                         : "not on the USB cable · another board: facet keyboard set"
@@ -454,7 +454,7 @@ FocusScope {
                 }
             }
 
-            // Off: frame-keyboard only prints what it would send
+            // Off: facet-keyboard only prints what it would send
             RowLayout {
                 spacing: Theme.spacing.normal
 

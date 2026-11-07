@@ -1,10 +1,10 @@
-# What `facet login` puts into /usr/share/frameshell/greeter for the bloom login screen,
+# What `facet login` puts into /usr/share/facet/greeter for the bloom login screen,
 # one file per line: <destination> <source>. Sources: greeter/… is this folder, package/… the
 # style's package (bloom/.config/quickshell/…), theme the rendered Theme.qml. The greeter runs
 # as its own user without core, so it gets copies of exactly the pieces it uses: the
 # lockscreen's clock and pill, and the components they need.
 shell.qml                   greeter/shell.qml
-frame-greeter-session       greeter/frame-greeter-session
+facet-greeter-session       greeter/facet-greeter-session
 config/Config.qml           greeter/config/Config.qml
 config/Theme.qml            theme
 components/Anim.qml         package/components/Anim.qml

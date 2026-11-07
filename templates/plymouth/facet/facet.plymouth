@@ -1,0 +1,8 @@
+[Plymouth Theme]
+Name=facet
+Description=facet boot splash in the bloom style ({{name}}): the flower in a ring that fills while booting and sweeps while shutting down, the disk password as a pill
+ModuleName=script
+
+[script]
+ImageDir=/usr/share/plymouth/themes/facet
+ScriptFile=/usr/share/plymouth/themes/facet/facet.script

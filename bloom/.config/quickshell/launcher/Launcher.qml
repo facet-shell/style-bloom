@@ -16,7 +16,7 @@ import qs.services
 // In a game with "compact in a game" on it opens smaller (Bloom.compact("panels")).
 //
 // Keep: open, show(preset), hide(), toggle(screen), the IPC target "launcher" and the layer
-// name "qs-launcher" (hypr/frame/shell.lua looks for it to send Ctrl+Alt+Q's @ here
+// name "qs-launcher" (hypr/facet/shell.lua looks for it to send Ctrl+Alt+Q's @ here
 // through `type`).
 Scope {
     id: root
@@ -93,7 +93,7 @@ Scope {
         field.input.cursorPosition = text.length;
     }
 
-    // Types text at the cursor, over a selection (Ctrl+Alt+Q → @, frame/shell.lua)
+    // Types text at the cursor, over a selection (Ctrl+Alt+Q → @, facet/shell.lua)
     function type(text) {
         const input = field.input;
         if (input.selectedText !== "")
@@ -394,7 +394,7 @@ Scope {
             root.show("");
         }
 
-        // Super+V: the clipboard history (frame-clip), like Windows
+        // Super+V: the clipboard history (facet-clip), like Windows
         function clipboard(): void {
             root.show("; ");
         }
@@ -409,7 +409,7 @@ Scope {
             root.show(text);
         }
 
-        // Types into the open launcher; Ctrl+Alt+Q (frame/shell.lua) sends its @ here, the
+        // Types into the open launcher; Ctrl+Alt+Q (facet/shell.lua) sends its @ here, the
         // launcher is no window that sendshortcut could reach
         function type(text: string): void {
             if (root.open)

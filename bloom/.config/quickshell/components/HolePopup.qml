@@ -3,7 +3,7 @@ import Quickshell
 import Quickshell.Wayland
 import qs.config
 
-// A window for things that float inside the hole without joining the frame: notification
+// A window for things that float inside the hole without joining the facet: notification
 // popups, the Spotify bloom, the voice overlay, the in-game OSD pill. It is placed in the
 // hole (it respects the frame's exclusive zones), so with the frame away in a game it moves
 // to the screen's edge by itself.

@@ -24,7 +24,7 @@ import qs.services
 // F fullscreen, Enter go there, Q close it. Esc or right click goes back.
 //
 // `qs ipc call overview toggle|open|close|zoomIn|zoomOut`; the Super+wheel binds are in
-// hypr/frame/canvas.lua, everything else the overlay handles itself.
+// hypr/facet/canvas.lua, everything else the overlay handles itself.
 Scope {
     id: root
 
@@ -366,7 +366,7 @@ Scope {
     PanelWindow {
         id: window
 
-        // The hole of the frame: the overview lives in it; in a game the frame is away and
+        // The hole of the facet: the overview lives in it; in a game the frame is away and
         // the whole screen is the hole
         readonly property bool away: Bloom.frameAway
         readonly property real holeX: away ? 0 : Theme.frame.border

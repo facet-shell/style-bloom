@@ -8,7 +8,7 @@ import qs.config
 import qs.lockscreen
 
 // The login screen in the bloom lockscreen's look: the clock rising in in the accent, the
-// date, the password pill, a hint. greetd runs it (frame-greeter-session) and starts the
+// date, the password pill, a hint. greetd runs it (facet-greeter-session) and starts the
 // session once the password is right; then the pill turns green and the clock flies up, like
 // unlocking. greeter.json next to this file says who and what:
 //   { "user": "name", "command": ["/usr/bin/start-hyprland"], "corners": "round", "animations": "full" }
@@ -181,7 +181,7 @@ ShellRoot {
             pill.shake();
         }
 
-        title: "frameshell login"
+        title: "facet login"
         color: Theme.page
         minimumSize: Qt.size(960, 540)
         implicitWidth: 1920

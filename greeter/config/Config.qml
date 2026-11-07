@@ -6,7 +6,7 @@ import Quickshell.Io
 
 // The few settings the login screen needs, in place of core's Config: Theme.qml reads
 // corners, animations and colorMode, the backdrop lockBlur. The greeter user cannot read
-// ~/.config/frameshell/shell.json, so `facet login` may copy those keys into greeter.json;
+// ~/.config/facet/shell.json, so `facet login` may copy those keys into greeter.json;
 // without them it looks like the defaults.
 Singleton {
     id: root

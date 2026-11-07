@@ -54,7 +54,7 @@ Singleton {
     // Hook for colors from the wallpaper (Config.colorMode "dynamic"): a generator writes the
     // same keys to dynamicFile as { "tones": { ... } }; whatever it leaves out stays the
     // theme's. Without the file the theme's tones are used, so "dynamic" is safe to pick early.
-    readonly property string dynamicFile: `${Quickshell.env("XDG_STATE_HOME") || Quickshell.env("HOME") + "/.local/state"}/frameshell/bloom-dynamic.json`
+    readonly property string dynamicFile: `${Quickshell.env("XDG_STATE_HOME") || Quickshell.env("HOME") + "/.local/state"}/facet/bloom-dynamic.json`
     property var dynamicTones: null
     readonly property bool dynamic: Config.colorMode === "dynamic" && dynamicTones !== null
     readonly property var tones: dynamic ? Object.assign({}, fixedTones, dynamicTones) : fixedTones
@@ -185,7 +185,7 @@ Singleton {
     }
 
     // The frame around each screen: the bar is its top edge
-    readonly property QtObject frame: QtObject {
+    readonly property QtObject facet: QtObject {
         readonly property int bar: 52
         readonly property int border: 10
     }

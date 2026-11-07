@@ -6,7 +6,7 @@ import qs.components
 import qs.config
 import qs.services
 
-// Hold Super for 1.5 seconds (hypr/frame/hotkeys.lua opens it, the release closes it) and
+// Hold Super for 1.5 seconds (hypr/facet/hotkeys.lua opens it, the release closes it) and
 // every Super key shows: a rounded card in the middle of the focused screen with the
 // keyboard (keys that do something lit) and all binds grouped (Binds). Also
 // `qs ipc call hotkeys toggle`; opened that way a click outside the card closes it. It takes

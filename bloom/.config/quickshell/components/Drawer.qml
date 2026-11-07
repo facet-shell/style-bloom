@@ -33,7 +33,7 @@ import qs.config
 //               (Theme.rounding.fillet); fillets: false for none
 // The window
 //   namespace   the layer's name (Hyprland rules, hl.get_layers): keep the tui names where
-//               they exist ("qs-launcher" is checked by hypr/frame/shell.lua)
+//               they exist ("qs-launcher" is checked by hypr/facet/shell.lua)
 //   windowLayer WlrLayer.Top (under fullscreen windows) or WlrLayer.Overlay (over them)
 //   keyboard    WlrKeyboardFocus.None (default), OnDemand (menus, Esc) or Exclusive (typing)
 //   closeOnOutside  a click outside it (and outside the bar) emits dismissed() (on by default)
@@ -44,7 +44,7 @@ import qs.config
 //   contentShown  0..1, the content's fade (follows progress, a little later)
 //   signal dismissed()  Esc, or a click outside with closeOnOutside; set open = false there
 //
-// The window never covers the frame: it is placed inside the hole (it respects the frame's
+// The window never covers the facet: it is placed inside the hole (it respects the frame's
 // exclusive zones), its content slides in from that edge clipped by the window, so it looks
 // as if it came from under the frame on any layer.
 PanelWindow {

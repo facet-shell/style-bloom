@@ -11,13 +11,13 @@ import qs.services
 // grid of round tiles, newest first. Click picks one, Ctrl+click more, Shift+click a run;
 // double click opens it in the editor. "delete" moves the picked ones into the trash together
 // with what belongs to them (a recording's .tracks folder, an .edit.json).
-// Files: quickshell/.local/bin/frame-media (core).
+// Files: quickshell/.local/bin/facet-media (core).
 FocusScope {
     id: root
 
     signal closeRequested()
 
-    readonly property string tool: `${Quickshell.env("HOME")}/.local/bin/frame-media`
+    readonly property string tool: `${Quickshell.env("HOME")}/.local/bin/facet-media`
     property string picturesDir: `${Quickshell.env("HOME")}/Pictures`
     readonly property string shotsDir: `${picturesDir}/screenshots`
     // Paint's pages (Editor.newPicture)
@@ -28,7 +28,7 @@ FocusScope {
     property bool choosePaper: false
     // Folders dropped on the app, kept in media.json
     property var extraFolders: []
-    readonly property string thumbDir: `${Quickshell.env("XDG_CACHE_HOME") || Quickshell.env("HOME") + "/.cache"}/frameshell/media`
+    readonly property string thumbDir: `${Quickshell.env("XDG_CACHE_HOME") || Quickshell.env("HOME") + "/.cache"}/facet/media`
 
     // Everything found: [{ path, name, kind, mtime, size, edited, tracks, duration, thumb }]
     property var all: []
@@ -39,7 +39,7 @@ FocusScope {
     property int anchorIndex: -1
     property bool confirmDelete: false
     property string status: ""
-    // .edit.json files and .tracks folders whose picture or video is gone (frame-media leftovers)
+    // .edit.json files and .tracks folders whose picture or video is gone (facet-media leftovers)
     property var leftovers: []
 
     readonly property int columns: Math.max(2, Math.floor(grid.width / 280))
@@ -150,9 +150,9 @@ FocusScope {
         if (paths.length === 0)
             return;
         if (paths.length === 1 && Editor.isImage(paths[0]))
-            Quickshell.execDetached(["sh", "-c", 'wl-copy --type image/png < "$1"', "frame-media", paths[0]]);
+            Quickshell.execDetached(["sh", "-c", 'wl-copy --type image/png < "$1"', "facet-media", paths[0]]);
         else
-            Quickshell.execDetached(["sh", "-c", 'for f in "$@"; do printf "file://%s\\n" "$f"; done | wl-copy --type text/uri-list', "frame-media"].concat(paths));
+            Quickshell.execDetached(["sh", "-c", 'for f in "$@"; do printf "file://%s\\n" "$f"; done | wl-copy --type text/uri-list', "facet-media"].concat(paths));
         status = paths.length === 1 ? "Copied" : `${paths.length} files copied`;
     }
 

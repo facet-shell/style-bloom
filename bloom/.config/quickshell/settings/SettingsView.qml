@@ -9,7 +9,7 @@ import qs.services
 // The settings window's content, laid out like Apple's: the categories as pills on the left
 // with a search box above them, the picked category's menu on the right (MenuPage: its pages
 // as rows with what each is set to), and a page opens over that menu with a back button.
-// Shell settings go through Config (kept in ~/.config/frameshell/shell.json, the round arrow
+// Shell settings go through Config (kept in ~/.config/facet/shell.json, the round arrow
 // puts one back); style, theme and layout through the facet command; what needs sudo or
 // shows output opens in a terminal of its own.
 //
@@ -117,8 +117,8 @@ FocusScope {
 
     readonly property string home: Quickshell.env("HOME")
     readonly property string facet: `${home}/.local/bin/facet`
-    readonly property string stateDir: `${Quickshell.env("XDG_STATE_HOME") || home + "/.local/state"}/frameshell`
-    readonly property string modulesDir: `${Quickshell.env("XDG_DATA_HOME") || home + "/.local/share"}/frameshell/modules`
+    readonly property string stateDir: `${Quickshell.env("XDG_STATE_HOME") || home + "/.local/state"}/facet`
+    readonly property string modulesDir: `${Quickshell.env("XDG_DATA_HOME") || home + "/.local/share"}/facet/modules`
 
     // [{ id, name, description, colors, tones }] from the facet command's themes
     property var themes: []
@@ -342,7 +342,7 @@ FocusScope {
 
     Process {
         id: themesProc
-        command: ["sh", "-c", 'd="${XDG_DATA_HOME:-$HOME/.local/share}/frameshell/cli/themes/bloom"; jq -c -n \'[inputs | { id: (input_filename | split("/") | last | rtrimstr(".json")), name, description, colors, tones }]\' "$d"/*.json']
+        command: ["sh", "-c", 'd="${XDG_DATA_HOME:-$HOME/.local/share}/facet/cli/themes/bloom"; jq -c -n \'[inputs | { id: (input_filename | split("/") | last | rtrimstr(".json")), name, description, colors, tones }]\' "$d"/*.json']
         stdout: StdioCollector {
             onStreamFinished: {
                 try {
