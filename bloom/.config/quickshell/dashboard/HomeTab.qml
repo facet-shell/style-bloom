@@ -334,6 +334,14 @@ RowLayout {
             readonly property int lead: (month.getDay() + 6) % 7
             readonly property int length: new Date(month.getFullYear(), month.getMonth() + 1, 0).getDate()
             readonly property int before: new Date(month.getFullYear(), month.getMonth(), 0).getDate()
+            // The day clicked last ("YYYY-MM-DD"): its events and the add field show under the month
+            property string picked: ""
+            readonly property string todayIso: iso(today)
+
+            function iso(d) {
+                return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+            }
+
             // Whole weeks, Monday first, with the neighbours' days dimmed
             readonly property var cells: {
                 const list = [];
@@ -341,14 +349,31 @@ RowLayout {
                 for (let i = 0; i < weeks * 7; i++) {
                     const day = i - lead + 1;
                     const inside = day >= 1 && day <= length;
+                    const date = iso(new Date(month.getFullYear(), month.getMonth(), day));
                     list.push({
                         text: String(inside ? day : day < 1 ? before + day : day - length),
                         inside,
-                        today: inside && shift === 0 && day === today.getDate()
+                        date,
+                        today: date === todayIso
                     });
                 }
                 return list;
             }
+
+            // The weeks on screen, asked again when the month changes or the dashboard opens
+            function ask(force) {
+                if (cells.length === 0)
+                    return;
+                const last = cells[cells.length - 1].date.split("-").map(Number);
+                Calendar.load(cells[0].date, iso(new Date(last[0], last[1] - 1, last[2] + 1)), force);
+            }
+
+            onCellsChanged: ask(false)
+            onVisibleChanged: {
+                if (visible)
+                    ask(false);
+            }
+            Component.onCompleted: ask(false)
 
             Layout.fillWidth: true
 
@@ -366,16 +391,27 @@ RowLayout {
                 anchors.fill: parent
                 spacing: Theme.spacing.small + 2
 
-                StyledText {
-                    text: calendar.month.toLocaleDateString(Qt.locale("en_GB"), "MMMM yyyy")
-                    color: calendar.shift === 0 ? Theme.dim : Theme.primary
-                    font.pixelSize: Theme.size.small
+                RowLayout {
+                    Layout.fillWidth: true
 
-                    MouseArea {
-                        anchors.fill: parent
-                        enabled: calendar.shift !== 0
-                        cursorShape: Qt.PointingHandCursor
-                        onClicked: calendar.shift = 0
+                    StyledText {
+                        Layout.fillWidth: true
+                        text: calendar.month.toLocaleDateString(Qt.locale("en_GB"), "MMMM yyyy")
+                        color: calendar.shift === 0 ? Theme.dim : Theme.primary
+                        font.pixelSize: Theme.size.small
+
+                        MouseArea {
+                            anchors.fill: parent
+                            enabled: calendar.shift !== 0
+                            cursorShape: Qt.PointingHandCursor
+                            onClicked: calendar.shift = 0
+                        }
+                    }
+                    Icon {
+                        visible: Calendar.loading || Calendar.errors.length > 0
+                        icon: Calendar.loading ? "sync" : "sync_problem"
+                        size: 14
+                        dim: true
                     }
                 }
 
@@ -404,23 +440,227 @@ RowLayout {
                         model: calendar.cells
 
                         Rectangle {
+                            id: dayCell
+
                             required property var modelData
+                            // Up to three dots in the colors of the day's calendars
+                            readonly property var dots: {
+                                const seen = [];
+                                for (const e of Calendar.on(modelData.date))
+                                    if (!seen.includes(e.color) && seen.length < 3)
+                                        seen.push(e.color);
+                                return seen;
+                            }
+                            readonly property bool isPicked: calendar.picked === modelData.date
 
                             Layout.fillWidth: true
                             implicitHeight: 24
                             radius: height / 2
-                            color: modelData.today ? Theme.primary : "transparent"
+                            color: modelData.today ? Theme.primary
+                                : isPicked ? Theme.secondaryContainer
+                                : dayArea.containsMouse ? Theme.hover : "transparent"
 
                             StyledText {
                                 anchors.centerIn: parent
-                                text: modelData.text
+                                anchors.verticalCenterOffset: dayCell.dots.length > 0 ? -2 : 0
+                                text: dayCell.modelData.text
                                 tabular: true
-                                opacity: modelData.inside ? 1 : 0.35
-                                color: modelData.today ? Theme.textOnPrimary : Theme.dim
+                                opacity: dayCell.modelData.inside ? 1 : 0.35
+                                color: dayCell.modelData.today ? Theme.textOnPrimary : dayCell.isPicked ? Theme.text : Theme.dim
                                 font.pixelSize: Theme.size.tiny
-                                font.weight: modelData.today ? Font.DemiBold : Font.Normal
+                                font.weight: dayCell.modelData.today || dayCell.isPicked ? Font.DemiBold : Font.Normal
+                            }
+
+                            Row {
+                                anchors.horizontalCenter: parent.horizontalCenter
+                                anchors.bottom: parent.bottom
+                                anchors.bottomMargin: 3
+                                spacing: 2
+
+                                Repeater {
+                                    model: dayCell.dots
+
+                                    Rectangle {
+                                        required property string modelData
+
+                                        width: 4
+                                        height: 4
+                                        radius: 2
+                                        color: dayCell.modelData.today ? Theme.textOnPrimary : modelData
+                                    }
+                                }
+                            }
+
+                            MouseArea {
+                                id: dayArea
+
+                                anchors.fill: parent
+                                hoverEnabled: true
+                                cursorShape: Qt.PointingHandCursor
+                                onClicked: calendar.picked = calendar.picked === dayCell.modelData.date ? "" : dayCell.modelData.date
                             }
                         }
+                    }
+                }
+
+                // The picked day: its events, then a field to add one
+                ColumnLayout {
+                    id: dayPanel
+
+                    readonly property var list: calendar.picked !== "" ? Calendar.on(calendar.picked) : []
+                    // The calendar new events go to; the chip cycles through the writable ones
+                    property int target: 0
+                    readonly property var targetCal: Calendar.writable.length > 0 ? Calendar.writable[target % Calendar.writable.length] : null
+
+                    // "14:00 Dentist", "9-10:30 School", "Holiday" (all day)
+                    function submit(text) {
+                        const m = text.trim().match(/^(\d{1,2})(?::(\d{2}))?(?:\s*-\s*(\d{1,2})(?::(\d{2}))?)?\s+(.+)$/);
+                        const pad = n => String(n).padStart(2, "0");
+                        let start = calendar.picked, end = "", title = text.trim();
+                        if (m && Number(m[1]) < 24) {
+                            start = `${calendar.picked}T${pad(m[1])}:${m[2] ?? "00"}`;
+                            if (m[3] !== undefined)
+                                end = `${calendar.picked}T${pad(m[3])}:${m[4] ?? "00"}`;
+                            title = m[5];
+                        }
+                        if (title === "" || !targetCal)
+                            return false;
+                        Calendar.add(targetCal.id, title, start, end);
+                        return true;
+                    }
+
+                    Layout.fillWidth: true
+                    Layout.topMargin: 4
+                    visible: calendar.picked !== ""
+                    spacing: 4
+
+                    Rectangle {
+                        Layout.fillWidth: true
+                        implicitHeight: 1
+                        color: Theme.alpha(Theme.outline, 0.6)
+                    }
+
+                    StyledText {
+                        Layout.fillWidth: true
+                        text: calendar.picked === "" ? "" : new Date(`${calendar.picked}T12:00`).toLocaleDateString(Qt.locale("en_GB"), "dddd d MMMM")
+                        font.pixelSize: Theme.size.small
+                        font.weight: Font.DemiBold
+                    }
+
+                    // No account yet: how to connect one
+                    StyledText {
+                        Layout.fillWidth: true
+                        visible: Calendar.accounts === 0
+                        text: "Connect calendars once in a terminal: facet-calendar setup icloud, or facet-calendar setup google <client.json>"
+                        dim: true
+                        wrapMode: Text.WordWrap
+                        font.pixelSize: Theme.size.tiny
+                    }
+                    StyledText {
+                        Layout.fillWidth: true
+                        visible: Calendar.errors.length > 0
+                        text: Calendar.errors.join("\n")
+                        color: Theme.error
+                        wrapMode: Text.WordWrap
+                        maximumLineCount: 3
+                        elide: Text.ElideRight
+                        font.pixelSize: Theme.size.tiny
+                    }
+                    StyledText {
+                        Layout.fillWidth: true
+                        visible: Calendar.accounts > 0 && dayPanel.list.length === 0
+                        text: Calendar.loading ? "Asking the calendars …" : "Nothing planned"
+                        dim: true
+                        opacity: 0.7
+                        font.pixelSize: Theme.size.tiny
+                    }
+
+                    Repeater {
+                        model: dayPanel.list.slice(0, 5)
+
+                        RowLayout {
+                            required property var modelData
+
+                            Layout.fillWidth: true
+                            spacing: 6
+
+                            Rectangle {
+                                implicitWidth: 3
+                                implicitHeight: 14
+                                radius: 2
+                                color: modelData.color
+                            }
+                            StyledText {
+                                text: modelData.allDay ? "all day" : modelData.start.slice(0, 10) < calendar.picked ? "…" : modelData.start.slice(11)
+                                tabular: true
+                                dim: true
+                                font.pixelSize: Theme.size.tiny
+                            }
+                            StyledText {
+                                Layout.fillWidth: true
+                                text: modelData.title
+                                elide: Text.ElideRight
+                                font.pixelSize: Theme.size.tiny
+                            }
+                        }
+                    }
+                    StyledText {
+                        visible: dayPanel.list.length > 5
+                        text: `+${dayPanel.list.length - 5} more`
+                        dim: true
+                        font.pixelSize: Theme.size.tiny
+                    }
+
+                    // Adding: the calendar it goes to, then what and when
+                    RowLayout {
+                        Layout.fillWidth: true
+                        visible: dayPanel.targetCal !== null
+                        spacing: 6
+
+                        Rectangle {
+                            implicitWidth: 10
+                            implicitHeight: 10
+                            radius: 5
+                            color: dayPanel.targetCal?.color ?? Theme.primary
+                        }
+                        StyledText {
+                            Layout.fillWidth: true
+                            text: dayPanel.targetCal ? `to ${dayPanel.targetCal.name}` : ""
+                            elide: Text.ElideRight
+                            dim: true
+                            font.pixelSize: Theme.size.tiny
+
+                            MouseArea {
+                                anchors.fill: parent
+                                enabled: Calendar.writable.length > 1
+                                cursorShape: Qt.PointingHandCursor
+                                onClicked: dayPanel.target = (dayPanel.target + 1) % Calendar.writable.length
+                            }
+                        }
+                    }
+                    SearchField {
+                        id: addField
+
+                        Layout.fillWidth: true
+                        visible: dayPanel.targetCal !== null
+                        implicitWidth: 100
+                        implicitHeight: 30
+                        icon: Calendar.adding ? "hourglass_top" : "add"
+                        placeholder: "14:00 Dentist"
+                        hint: ""
+                        onAccepted: {
+                            if (dayPanel.submit(text))
+                                text = "";
+                        }
+                        onEscaped: calendar.picked = ""
+                    }
+                    StyledText {
+                        Layout.fillWidth: true
+                        visible: Calendar.addError !== ""
+                        text: Calendar.addError
+                        color: Theme.error
+                        wrapMode: Text.WordWrap
+                        font.pixelSize: Theme.size.tiny
                     }
                 }
             }
