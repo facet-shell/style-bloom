@@ -17,6 +17,8 @@ Item {
     readonly property bool mine: scope === "me"
     property bool menuOpen: false
     property bool adding: false
+    // The token field under the login card
+    property bool tokenOpen: false
 
     signal scopePicked(string scope)
     signal refreshRequested()
@@ -26,6 +28,15 @@ Item {
 
     function shortRepo(full) {
         return String(full ?? "").split("/").pop();
+    }
+
+    // Open pull requests on github.com: for you (involving you) or the organisation picked;
+    // reviews: only the ones waiting on you
+    function openSearch(reviews) {
+        const who = reviews ? "review-requested:@me" : mine ? "involves:@me" : "";
+        const where = mine ? "" : `org:${root.scope}`;
+        const query = ["is:pr", "is:open", who, where].filter(p => p !== "").join(" ");
+        Qt.openUrlExternally(`https://github.com/pulls?q=${encodeURIComponent(query)}`);
     }
 
     function prIcon(state) {
@@ -259,6 +270,7 @@ Item {
                     selected: false
                     icon: "rate_review"
                     text: count === 1 ? "1 review for you" : `${count} reviews for you`
+                    onClicked: root.openSearch(true)
                 }
                 Chip {
                     readonly property int count: root.mine ? (root.github?.prs ?? []).filter(p => p.state === "open" || p.state === "draft").length : (root.github?.orgPrCount ?? 0)
@@ -266,6 +278,7 @@ Item {
                     selected: !root.mine
                     icon: "merge"
                     text: count === 1 ? "1 open PR" : `${count} open PRs`
+                    onClicked: root.openSearch(false)
                 }
                 Chip {
                     readonly property var done: (root.github?.orgRuns ?? []).filter(r => r.state === "ok" || r.state === "bad")
@@ -294,63 +307,165 @@ Item {
             }
         }
 
-        // gh missing, not logged in, or an error
+        // gh missing, not logged in, an error, or a login going on
         Card {
             id: problem
 
             readonly property string status: root.github?.status ?? "unknown"
+            readonly property string auth: root.github?.authState ?? ""
             readonly property string orgProblem: !root.mine && status === "ok" ? (root.github?.orgError ?? "") : ""
+            // The organisation loaded, only its board needs read:project
+            readonly property bool board: !root.mine && status === "ok" && orgProblem === "" && (root.github?.boardBlocked ?? false)
+            readonly property bool bad: auth === "failed" || (auth === "" && (status === "error" || orgProblem !== ""))
+            // What the card is about, in this order
+            readonly property string kind: auth !== "" ? auth
+                : status !== "ok" ? status
+                : orgProblem !== "" ? "org" : board ? "board" : ""
 
             Layout.fillWidth: true
-            visible: status !== "ok" || orgProblem !== ""
+            visible: kind !== ""
 
-            RowLayout {
+            ColumnLayout {
                 anchors.fill: parent
-                spacing: Theme.spacing.large
+                spacing: Theme.spacing.normal
 
-                Rectangle {
-                    implicitWidth: 46
-                    implicitHeight: 46
-                    radius: Theme.rounding.medium
-                    color: problem.status === "error" || problem.orgProblem !== "" ? Theme.errorContainer : Theme.secondaryContainer
-
-                    Icon {
-                        anchors.centerIn: parent
-                        icon: problem.status === "unknown" ? "hourglass_top" : problem.status === "missing" ? "terminal" : problem.status === "loggedOut" ? "login" : "cloud_off"
-                        color: problem.status === "error" || problem.orgProblem !== "" ? Theme.textOnErrorContainer : Theme.text
-                    }
-                }
-                ColumnLayout {
+                RowLayout {
                     Layout.fillWidth: true
-                    spacing: 2
+                    spacing: Theme.spacing.large
 
-                    StyledText {
-                        Layout.fillWidth: true
-                        font.weight: Font.DemiBold
-                        text: problem.orgProblem !== "" ? `Could not read ${root.scope}`
-                            : problem.status === "unknown" ? "Asking GitHub …"
-                            : problem.status === "missing" ? "The GitHub CLI is not installed"
-                            : problem.status === "loggedOut" ? "gh is not logged in"
-                            : "GitHub did not answer"
+                    Rectangle {
+                        implicitWidth: 46
+                        implicitHeight: 46
+                        radius: Theme.rounding.medium
+                        color: problem.bad ? Theme.errorContainer : Theme.secondaryContainer
+
+                        Icon {
+                            anchors.centerIn: parent
+                            icon: ({
+                                browser: "key", token: "hourglass_top", failed: "key_off", unknown: "hourglass_top",
+                                missing: "terminal", loggedOut: "login", board: "view_kanban"
+                            })[problem.kind] ?? "cloud_off"
+                            color: problem.bad ? Theme.textOnErrorContainer : Theme.text
+                        }
                     }
-                    StyledText {
+                    ColumnLayout {
                         Layout.fillWidth: true
-                        dim: true
-                        font.pixelSize: Theme.size.small
-                        wrapMode: Text.WordWrap
-                        text: problem.orgProblem !== "" ? problem.orgProblem
-                            : problem.status === "unknown" ? "Through the gh CLI and its login"
-                            : problem.status === "missing" ? "This tab reads GitHub through gh: sudo pacman -S github-cli, then gh auth login"
-                            : problem.status === "loggedOut" ? "Run gh auth login once in a terminal; the tab uses the same login"
-                            : root.github?.error ?? ""
+                        spacing: 2
+
+                        StyledText {
+                            Layout.fillWidth: true
+                            font.weight: Font.DemiBold
+                            text: ({
+                                browser: root.github?.authCode ? `Enter ${root.github.authCode} on GitHub` : "Asking GitHub for a code …",
+                                token: "Checking the token …",
+                                failed: "GitHub did not take the login",
+                                unknown: "Asking GitHub …",
+                                missing: "The GitHub CLI is not installed",
+                                loggedOut: "Not connected to GitHub",
+                                org: `Could not read ${root.scope}`,
+                                board: "The project board needs one more permission"
+                            })[problem.kind] ?? "GitHub did not answer"
+                        }
+                        StyledText {
+                            Layout.fillWidth: true
+                            dim: true
+                            font.pixelSize: Theme.size.small
+                            wrapMode: Text.WordWrap
+                            text: ({
+                                browser: root.github?.authCode ? `The page ${(root.github?.authUrl ?? "").replace("https://", "")} is open in your browser. This card goes on by itself once GitHub says yes.` : "",
+                                token: "gh keeps it in the keyring, like a browser login",
+                                failed: root.github?.authError ?? "",
+                                unknown: "Through the gh CLI and its login",
+                                missing: "This tab reads GitHub through gh: sudo pacman -S github-cli",
+                                loggedOut: "Sign in through the browser, or paste a personal access token (classic, with repo, read:org and read:project). gh keeps the login, so git and the terminal use it too.",
+                                org: problem.orgProblem,
+                                board: "Your login can read the pull requests and runs, but not the board. Grant read:project once in the browser."
+                            })[problem.kind] ?? root.github?.error ?? ""
+                        }
+                    }
+                    Button {
+                        id: copyCode
+
+                        visible: problem.kind === "browser" && (root.github?.authCode ?? "") !== ""
+                        text: done ? "Copied" : "Copy code"
+                        icon: done ? "check" : "content_copy"
+                        variant: "filled"
+                        onClicked: {
+                            Quickshell.execDetached(["wl-copy", "--", root.github.authCode]);
+                            done = true;
+                            copiedTimer.restart();
+                        }
+
+                        Timer {
+                            id: copiedTimer
+                            interval: 2000
+                            onTriggered: copyCode.done = false
+                        }
+                    }
+                    Button {
+                        visible: problem.kind === "browser" || problem.kind === "token"
+                        text: "Cancel"
+                        icon: "close"
+                        variant: "tonal"
+                        onClicked: root.github.cancelAuth()
+                    }
+                    Button {
+                        visible: problem.kind === "loggedOut" || (problem.kind === "failed" && problem.status !== "ok")
+                        text: "Use a token"
+                        icon: "password"
+                        variant: "tonal"
+                        onClicked: {
+                            root.tokenOpen = !root.tokenOpen;
+                            if (root.tokenOpen) {
+                                tokenField.text = "";
+                                tokenField.focusField();
+                            }
+                        }
+                    }
+                    Button {
+                        visible: problem.kind === "loggedOut" || problem.kind === "board" || problem.kind === "failed"
+                        text: problem.kind === "board" || (problem.kind === "failed" && problem.status === "ok") ? "Grant in browser" : "Sign in"
+                        icon: "open_in_new"
+                        variant: "filled"
+                        onClicked: {
+                            root.tokenOpen = false;
+                            if (problem.status === "ok")
+                                root.github.grantBoard();
+                            else
+                                root.github.signIn();
+                        }
+                    }
+                    Button {
+                        visible: problem.kind === "missing" || problem.kind === "error" || problem.kind === "org"
+                        text: "Try again"
+                        icon: "refresh"
+                        variant: "tonal"
+                        onClicked: root.refreshRequested()
                     }
                 }
-                Button {
-                    visible: problem.status !== "unknown"
-                    text: "Try again"
-                    icon: "refresh"
-                    variant: "tonal"
-                    onClicked: root.refreshRequested()
+
+                SearchField {
+                    id: tokenField
+
+                    visible: root.tokenOpen && (problem.kind === "loggedOut" || problem.kind === "failed")
+                    Layout.fillWidth: true
+                    implicitHeight: Theme.control.button
+                    baseColor: Theme.container
+                    icon: "key"
+                    password: true
+                    hint: "Enter"
+                    placeholder: "ghp_… or github_pat_…"
+                    onAccepted: {
+                        const token = text;
+                        text = "";
+                        root.tokenOpen = false;
+                        root.github.useToken(token);
+                    }
+                    onEscaped: {
+                        text = "";
+                        root.tokenOpen = false;
+                        root.forceActiveFocus();
+                    }
                 }
             }
         }

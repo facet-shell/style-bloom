@@ -16,6 +16,15 @@ Scope {
     property string error: ""
     readonly property bool busy: check.running || me.running || orgCall.running || runsCall.running
 
+    // Connecting gh from the tab: "" (nothing going on), "browser" (a one-time code waits to be
+    // entered on github.com), "token" (a pasted token is being checked), "failed" (authError)
+    property string authState: ""
+    property string authCode: ""
+    property string authUrl: ""
+    property string authError: ""
+    // The login lacks read:project: the organisation loads without its project board
+    property bool boardBlocked: false
+
     // ── You ──────────────────────────────────────────────────
 
     property string login: ""
@@ -72,6 +81,84 @@ Scope {
         Config.set("githubOrgs", orgs.filter(o => o !== name));
     }
 
+    // ── Connecting ───────────────────────────────────────────
+
+    // gh's device flow without a terminal: gh prints the one-time code and the URL on stderr,
+    // the tab shows the code and opens the page, gh finishes once GitHub says yes.
+    // read:project comes along so the organisation's project board can be read too.
+    function signIn() {
+        startAuth("browser", ["gh", "auth", "login", "-h", "github.com", "-w", "-p", "https", "-s", "read:project"]);
+    }
+
+    // Adds read:project to the login gh already has
+    function grantBoard() {
+        startAuth("browser", ["gh", "auth", "refresh", "-h", "github.com", "-s", "read:project"]);
+    }
+
+    // A personal access token (classic: repo, read:org, read:project). It goes to gh over
+    // stdin, never on a command line, and gh keeps it in the keyring like any other login.
+    function useToken(token) {
+        const clean = String(token ?? "").trim();
+        if (clean === "" || authCall.running)
+            return;
+        authCall.token = clean;
+        startAuth("token", ["gh", "auth", "login", "-h", "github.com", "-p", "https", "--with-token"]);
+    }
+
+    function cancelAuth() {
+        if (authCall.running)
+            authCall.signal(15);
+        authState = "";
+        authCode = "";
+        authUrl = "";
+    }
+
+    function startAuth(kind, args) {
+        if (authCall.running)
+            return;
+        authState = kind;
+        authCode = "";
+        authUrl = "";
+        authError = "";
+        authCall.stderrLines = [];
+        authCall.stdinEnabled = kind === "token";
+        authCall.command = args;
+        authCall.running = true;
+    }
+
+    function authLine(line) {
+        authCall.stderrLines.push(line);
+        const code = line.match(/\b([A-Z0-9]{4}-[A-Z0-9]{4})\b/);
+        if (code)
+            authCode = code[1];
+        const url = line.match(/https:\/\/\S+/);
+        if (url && authUrl === "") {
+            authUrl = url[0];
+            Qt.openUrlExternally(authUrl);
+        }
+    }
+
+    function authDone(code) {
+        if (authState === "")
+            return; // cancelled
+        if (code !== 0) {
+            authState = "failed";
+            const lines = authCall.stderrLines.filter(l => l.trim() !== "" && !/one-time code|open this url|press enter/i.test(l));
+            authError = (lines.pop() ?? `gh exited with ${code}`).replace(/^(gh: |error validating token: |X )/, "");
+            return;
+        }
+        authState = "";
+        authCode = "";
+        authUrl = "";
+        boardBlocked = false;
+        // Ask again from the start: a new login can be another account
+        status = "unknown";
+        login = "";
+        fetchedAt = 0;
+        orgFetchedAt = 0;
+        refresh(true);
+    }
+
     // ── Asking ───────────────────────────────────────────────
 
     // force: also when the last answer is younger than two minutes
@@ -100,7 +187,7 @@ Scope {
         org = name;
         orgError = "";
         orgCall.run(["gh", "api", "graphql",
-            "-f", `query=${orgQuery}`,
+            "-f", `query=${boardBlocked ? orgQueryNoBoard : orgQuery}`,
             "-f", `org=${name}`,
             "-f", `qPrs=is:pr is:open org:${name} sort:updated-desc`,
             "-f", `qReview=is:pr is:open org:${name} review-requested:${login}`]);
@@ -252,6 +339,14 @@ Scope {
     function takeOrg(code, out, err) {
         const answer = parse(out);
         const o = answer?.data?.organization;
+        // Without read:project GitHub refuses the whole request, not only the board: once more
+        // without it, and the tab offers to add the scope
+        const scopeError = (answer?.errors ?? []).some(e => e.type === "INSUFFICIENT_SCOPES" || /read:project/.test(e.message ?? ""));
+        if (!o && scopeError && !boardBlocked) {
+            boardBlocked = true;
+            Qt.callLater(() => root.refreshOrg(root.org, true));
+            return;
+        }
         if (!o) {
             orgError = answer?.errors?.[0]?.message ?? (err.trim().split("\n")[0] || `gh exited with ${code}`);
             if (code === 4)
@@ -277,8 +372,9 @@ Scope {
             }
         }
         orgBoard = board;
-        const scopeError = (answer.errors ?? []).some(e => e.type === "INSUFFICIENT_SCOPES" || /scope/i.test(e.message ?? ""));
-        boardNote = scopeError ? "The board needs another scope: gh auth refresh -s read:project"
+        if (scopeError)
+            boardBlocked = true;
+        boardNote = boardBlocked ? "The board needs the read:project permission"
             : (o.projectsV2?.nodes ?? []).length === 0 ? "No project board" : "Nothing in progress";
         orgFetchedAt = Date.now();
     }
@@ -353,6 +449,9 @@ Scope {
         "  review: search(query: $qReview, type: ISSUE, first: 1) { issueCount }",
         "}"
     ].join("\n")
+
+    // The same without the project board, for a login without read:project
+    readonly property string orgQueryNoBoard: orgQuery.replace(/    projectsV2[\s\S]*?\n    \}\n/, "")
 
     // The newest runs of the six repos pushed last, one JSON object per line
     readonly property string runsScript: [
@@ -435,6 +534,29 @@ Scope {
     GhCall {
         id: orgCall
         handler: (code, out, err) => root.takeOrg(code, out, err)
+    }
+
+    Process {
+        id: authCall
+
+        property string token: ""
+        property var stderrLines: []
+
+        // gh reads the token from stdin; closing stdin tells it that was all
+        onStarted: {
+            if (stdinEnabled) {
+                write(token + "\n");
+                token = "";
+                stdinEnabled = false;
+            }
+        }
+        stdout: SplitParser {
+            onRead: line => root.authLine(line)
+        }
+        stderr: SplitParser {
+            onRead: line => root.authLine(line)
+        }
+        onExited: (exitCode, exitStatus) => root.authDone(exitCode)
     }
 
     GhCall {
