@@ -104,7 +104,9 @@ Scope {
         lastFaders = now;
         if (changed)
             show(capitalized(changed.label),
-                changed.muted ? (changed.key === "mic" ? "mic_off" : "volume_off") : (faderIcons[changed.key] ?? "volume_up"),
+                changed.key === "mic" ? Audio.micIcon(changed.muted)
+                    : changed.key === "system" || !faderIcons[changed.key] ? Audio.volumeIcon(changed.level / 100, changed.muted)
+                    : changed.muted ? "volume_off" : faderIcons[changed.key],
                 changed.muted ? 0 : changed.level / 100, changed.muted ? "muted" : `${changed.level} %`, changed.muted);
     }
 
@@ -116,7 +118,7 @@ Scope {
         if (level === undefined)
             return;
         if (lastSystem >= 0 && level !== lastSystem && !GoXLR.systemOnFader)
-            show("System", "volume_up", level / 100, `${level} %`, false);
+            show("System", Audio.volumeIcon(level / 100, false), level / 100, `${level} %`, false);
         lastSystem = level;
     }
 
@@ -140,7 +142,7 @@ Scope {
             if (GoXLR.micButtonMuted === root.lastMicButton)
                 return;
             root.lastMicButton = GoXLR.micButtonMuted;
-            root.show("Mic", GoXLR.micButtonMuted ? "mic_off" : "mic", -1,
+            root.show("Mic", Audio.micIcon(GoXLR.micButtonMuted), -1,
                 GoXLR.micButtonMuted ? "muted" : "live", GoXLR.micButtonMuted);
         }
     }
@@ -156,7 +158,8 @@ Scope {
             return;
         const key = Audio.virtualChannels.find(c => c.node === node)?.key ?? "";
         show(key === "" ? "Output" : capitalized(Audio.routeLabel(key)),
-            audio.muted ? "volume_off" : (faderIcons[key] ?? "volume_up"),
+            key === "" || key === "system" || !faderIcons[key] ? Audio.volumeIcon(audio.volume, audio.muted)
+                : audio.muted ? "volume_off" : faderIcons[key],
             audio.muted ? 0 : Math.min(1, audio.volume),
             audio.muted ? "muted" : `${Math.round(audio.volume * 100)} %`, audio.muted);
     }
@@ -196,7 +199,7 @@ Scope {
         if (!audio || `${sink.id}` !== lastSinkKey)
             return;
         show(sink.description || sink.name || "Output",
-            audio.muted ? "volume_off" : audio.volume < 0.35 ? "volume_down" : "volume_up",
+            Audio.volumeIcon(audio.volume, audio.muted),
             audio.muted ? 0 : Math.min(1, audio.volume),
             audio.muted ? "muted" : `${Math.round(audio.volume * 100)} %`, audio.muted);
     }

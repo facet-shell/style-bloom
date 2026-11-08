@@ -185,7 +185,7 @@ ColumnLayout {
                 spacing: Theme.spacing.normal
 
                 Icon {
-                    icon: master.mic ? "mic" : "speaker"
+                    icon: master.mic ? Audio.micIcon(master.muted) : Audio.volumeIcon(master.volume, master.muted)
                     size: Theme.icon.small
                     dim: true
                 }

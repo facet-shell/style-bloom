@@ -321,7 +321,7 @@ Item {
 
                 Layout.fillWidth: true
                 value: goxlrSystem ? (GoXLR.volumes.system ?? 0) / 100 : Audio.defaultSink?.audio?.volume ?? 0
-                icon: muted ? "volume_off" : value < 0.01 ? "volume_mute" : value < 0.5 ? "volume_down" : "volume_up"
+                icon: Audio.volumeIcon(value, muted)
                 disabled: !goxlrSystem && Audio.defaultSink === null
                 onMoved: v => {
                     if (goxlrSystem)

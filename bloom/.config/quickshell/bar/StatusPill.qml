@@ -24,7 +24,7 @@ Pill {
         : "wifi_1_bar"
     readonly property bool sinkMuted: sink?.audio?.muted ?? false
     readonly property real sinkVolume: sink?.audio?.volume ?? 0
-    readonly property string volumeIcon: sinkMuted ? "volume_off" : sinkVolume < 0.01 ? "volume_mute" : sinkVolume < 0.5 ? "volume_down" : "volume_up"
+    readonly property string volumeIcon: Audio.volumeIcon(sinkVolume, sinkMuted)
     readonly property bool micMuted: (source?.audio?.muted ?? false) || (GoXLR.available && GoXLR.micButtonMuted)
     readonly property string batteryIcon: {
         if (!hasBattery)
@@ -67,7 +67,7 @@ Pill {
     }
     Icon {
         visible: root.source !== null
-        icon: root.micMuted ? "mic_off" : "mic"
+        icon: Audio.micIcon(root.micMuted)
         size: 19
         color: root.micMuted ? Theme.error : Theme.dim
     }
