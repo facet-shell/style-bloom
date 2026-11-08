@@ -550,13 +550,21 @@ Item {
                                 model: heat.cells
 
                                 Rectangle {
+                                    id: day
+
                                     required property var modelData
+                                    // The day under the mouse grows a little and gets a ring
+                                    readonly property bool lit: dayArea.containsMouse
 
                                     x: modelData.x
                                     y: modelData.y
+                                    z: lit ? 1 : 0
                                     width: heat.cell
                                     height: heat.cell
+                                    scale: lit ? 1.3 : 1
                                     radius: Math.round(Theme.rounding.small * 0.3)
+                                    border.width: lit ? 1.5 : 0
+                                    border.color: Theme.text
                                     color: modelData.level === 0 ? Theme.high
                                         : modelData.level === 4 ? Theme.primary
                                         : Theme.mix(Theme.high, Theme.primary, [0, 0.3, 0.55, 0.8][modelData.level])
@@ -566,8 +574,15 @@ Item {
                                             duration: Theme.anim.color
                                         }
                                     }
+                                    Behavior on scale {
+                                        Anim {
+                                            duration: Theme.anim.fast
+                                        }
+                                    }
 
                                     MouseArea {
+                                        id: dayArea
+
                                         anchors.fill: parent
                                         hoverEnabled: true
                                         onContainsMouseChanged: {
