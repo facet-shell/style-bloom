@@ -263,6 +263,8 @@ Item {
                     selected: true
                     icon: "local_fire_department"
                     text: (root.github?.streak ?? 0) === 1 ? "1 day in a row" : `${root.github?.streak ?? 0} days in a row`
+                    // The profile, where the contribution graph is
+                    onClicked: Qt.openUrlExternally(`https://github.com/${root.github.login}`)
                 }
                 Chip {
                     readonly property int count: root.mine ? (root.github?.reviewCount ?? 0) : (root.github?.orgReviewCount ?? 0)
