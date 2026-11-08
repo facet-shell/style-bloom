@@ -316,7 +316,7 @@ RowLayout {
         }
     }
 
-    // ── Calendar and the next timer ──────────────────────────
+    // ── Calendar and daylight ────────────────────────────────
 
     ColumnLayout {
         Layout.preferredWidth: 250
@@ -426,56 +426,112 @@ RowLayout {
             }
         }
 
-        // The timer or alarm that goes off next
+        // Daylight: sunrise and sunset from the weather, and how much of the day is left
         Card {
-            id: nextCard
+            id: sun
 
-            readonly property var timer: Timers.timers.length > 0 ? Timers.timers.slice().sort((a, b) => a.ends - b.ends)[0] : null
-            readonly property var alarm: {
-                const on = Timers.alarms.filter(a => a.enabled && a.next);
-                return on.length > 0 ? on.sort((a, b) => a.next - b.next)[0] : null;
+            // Minutes since midnight, a tick a minute is plenty
+            property int now: minutesOf(Qt.formatTime(new Date(), "hh:mm"))
+            readonly property int rise: minutesOf(Weather.sunrise)
+            readonly property int set: minutesOf(Weather.sunset)
+            readonly property bool known: rise >= 0 && set > rise
+            readonly property bool day: known && now >= rise && now < set
+            readonly property bool beforeDawn: known && now < rise
+
+            function minutesOf(hhmm) {
+                const m = String(hhmm ?? "").match(/^(\d{1,2}):(\d{2})$/);
+                return m ? Number(m[1]) * 60 + Number(m[2]) : -1;
             }
-            // A timer wins when it ends before the alarm rings
-            readonly property bool showsTimer: timer !== null && (alarm === null || timer.ends <= alarm.next)
+
+            function span(minutes) {
+                const h = Math.floor(minutes / 60), m = minutes % 60;
+                return h > 0 ? `${h} h ${m} min` : `${m} min`;
+            }
 
             Layout.fillWidth: true
+            visible: known
 
-            RowLayout {
+            Timer {
+                running: sun.visible
+                repeat: true
+                interval: 60000
+                onTriggered: sun.now = sun.minutesOf(Qt.formatTime(new Date(), "hh:mm"))
+            }
+
+            ColumnLayout {
                 anchors.fill: parent
-                spacing: Theme.spacing.medium
+                spacing: Theme.spacing.normal
 
-                Rectangle {
-                    implicitWidth: Theme.control.button
-                    implicitHeight: Theme.control.button
-                    radius: Theme.rounding.normal
-                    color: Theme.secondaryContainer
+                RowLayout {
+                    Layout.fillWidth: true
+                    spacing: Theme.spacing.medium
 
-                    Icon {
-                        anchors.centerIn: parent
-                        icon: nextCard.showsTimer ? "timer" : nextCard.alarm ? "alarm" : "alarm_off"
-                        size: 20
+                    Rectangle {
+                        implicitWidth: Theme.control.button
+                        implicitHeight: Theme.control.button
+                        radius: Theme.rounding.normal
+                        color: sun.day ? Theme.secondaryContainer : Theme.high
+
+                        Icon {
+                            anchors.centerIn: parent
+                            icon: sun.day ? "wb_twilight" : "bedtime"
+                            size: 20
+                        }
+                    }
+
+                    ColumnLayout {
+                        Layout.fillWidth: true
+                        spacing: 0
+
+                        StyledText {
+                            Layout.fillWidth: true
+                            font.weight: Font.DemiBold
+                            tabular: true
+                            text: sun.day ? `Sunset at ${Weather.sunset}` : `Sunrise at ${Weather.sunrise}`
+                        }
+                        StyledText {
+                            Layout.fillWidth: true
+                            dim: true
+                            tabular: true
+                            elide: Text.ElideRight
+                            font.pixelSize: Theme.size.small
+                            text: sun.day ? `${sun.span(sun.set - sun.now)} of daylight left`
+                                : sun.beforeDawn ? `in ${sun.span(sun.rise - sun.now)}`
+                                : `dark since ${Weather.sunset}`
+                        }
                     }
                 }
 
-                ColumnLayout {
+                // The day from sunrise to sunset, filled as far as it has come
+                ProgressBar {
                     Layout.fillWidth: true
-                    spacing: 0
+                    thickness: 4
+                    value: sun.day ? (sun.now - sun.rise) / (sun.set - sun.rise) : sun.beforeDawn ? 0 : 1
+                    color: sun.day ? Theme.primary : Theme.dim
+                }
+
+                RowLayout {
+                    Layout.fillWidth: true
 
                     StyledText {
-                        Layout.fillWidth: true
-                        font.weight: Font.DemiBold
-                        text: nextCard.showsTimer ? (nextCard.timer.label || "Timer")
-                            : nextCard.alarm ? (nextCard.alarm.label || Timers.clock(nextCard.alarm.hour, nextCard.alarm.minute))
-                            : "No timer or alarm"
-                    }
-                    StyledText {
-                        Layout.fillWidth: true
                         dim: true
                         tabular: true
                         font.pixelSize: Theme.size.small
-                        text: nextCard.showsTimer ? `timer · ${Timers.formatSeconds(Timers.left(nextCard.timer))} left`
-                            : nextCard.alarm ? `alarm · ${Timers.whenText(nextCard.alarm.next)}`
-                            : "t 10m or a 7:30 in the launcher"
+                        text: Weather.sunrise
+                    }
+                    StyledText {
+                        Layout.fillWidth: true
+                        horizontalAlignment: Text.AlignHCenter
+                        dim: true
+                        font.pixelSize: Theme.size.small
+                        opacity: 0.7
+                        text: `${sun.span(sun.set - sun.rise)} of light`
+                    }
+                    StyledText {
+                        dim: true
+                        tabular: true
+                        font.pixelSize: Theme.size.small
+                        text: Weather.sunset
                     }
                 }
             }
