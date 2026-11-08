@@ -105,231 +105,228 @@ ColumnLayout {
         }
     }
 
+    // ── Engine: every display and wallpaper ──────────────────
+
     StyledText {
         visible: root.section !== "wallpaper"
         Layout.fillWidth: true
-        text: "Global settings · all displays and wallpapers"
+        text: root.output === "*" ? "For every display and wallpaper" : `For ${root.output}, every wallpaper`
         dim: true
         font.pixelSize: Theme.size.small
-        wrapMode: Text.Wrap
     }
 
-    GridLayout {
+    ColumnLayout {
         objectName: "glintGeneralSettings"
         Layout.fillWidth: true
-        columns: 2
-        columnSpacing: Theme.spacing.medium
-        rowSpacing: Theme.spacing.medium
+        spacing: 4
         visible: root.section !== "wallpaper"
         enabled: Wallpapers.glintActive && root.common.count > 0
         opacity: enabled ? 1 : 0.5
 
-        StyledText {
-            Layout.preferredWidth: 100
-            text: "FPS"
-            dim: true
-            font.pixelSize: Theme.size.small
-        }
-        RowLayout {
+        SettingRow {
             Layout.fillWidth: true
-            spacing: Theme.spacing.small
-            TextBox {
-                id: fpsField
-                Layout.preferredWidth: 84
-                Layout.minimumWidth: 84
-                Layout.maximumWidth: 84
-                Binding {
-                    target: fpsField
-                    property: "text"
-                    when: !fpsField.input.activeFocus
-                    value: root.common.mixed.fps ? "" : String(root.common.fps)
+            icon: "speed"
+            title: "Frame rate"
+            subtitle: root.common.mixed.fps ? "differs between the displays" : "auto follows the display"
+
+            SegmentedButtons {
+                readonly property var rates: {
+                    const list = ["0", "30", "60", "120"];
+                    const now = String(root.common.fps);
+                    return !root.common.mixed.fps && !list.includes(now) ? list.concat([now]) : list;
                 }
-                placeholder: root.common.mixed.fps ? "mixed" : "0 = auto"
-                input.validator: IntValidator { bottom: 0; top: 1000 }
-                onAccepted: {
-                    if (text !== "" && input.acceptableInput)
-                        Wallpapers.setDisplaySetting(root.output, "fps", Number(text));
-                }
+                model: rates.map(r => ({ key: r, label: r === "0" ? "auto" : r }))
+                current: root.common.mixed.fps ? "" : String(root.common.fps)
+                onSelected: key => Wallpapers.setDisplaySetting(root.output, "fps", Number(key))
             }
-            StyledText { Layout.fillWidth: true; text: "0 = display rate"; dim: true; wrapMode: Text.Wrap; font.pixelSize: Theme.size.tiny }
         }
 
-        StyledText {
-            Layout.preferredWidth: 100
-            text: "Scaling"
-            dim: true
-            font.pixelSize: Theme.size.small
-        }
-        RowLayout {
+        SettingRow {
             Layout.fillWidth: true
-            spacing: Theme.spacing.small
-            Choice {
-                objectName: "glintScalingChoice"
-                Layout.fillWidth: true
-                Layout.maximumWidth: 220
+            icon: "aspect_ratio"
+            title: "Scaling"
+            subtitle: root.common.mixed.scaling ? "differs between the displays" : "how it meets the screen"
+
+            SegmentedButtons {
                 model: ["fill", "fit", "center", "tile", "stretch"]
-                currentIndex: root.common.mixed.scaling ? -1 : model.indexOf(root.common.scaling)
-                displayText: currentIndex < 0 ? "mixed" : currentText
-                onActivated: index => Wallpapers.setDisplaySetting(root.output, "scaling", model[index])
+                current: root.common.mixed.scaling ? "" : root.common.scaling
+                onSelected: key => Wallpapers.setDisplaySetting(root.output, "scaling", key)
             }
         }
 
-        StyledText {
-            Layout.preferredWidth: 100
-            text: "Sound"
-            dim: true
-            font.pixelSize: Theme.size.small
-        }
-        RowLayout {
+        SettingRow {
             Layout.fillWidth: true
-            spacing: Theme.spacing.small
-            Slider {
-                id: volume
-                Layout.fillWidth: true
-                Layout.minimumWidth: 60
-                Layout.maximumWidth: 220
-                thin: true
-                property real staged: root.common.volume
-                value: volumeSave.running ? staged : root.common.volume
-                onMoved: v => { staged = v; volumeSave.restart(); }
-                Timer {
-                    id: volumeSave
-                    interval: 250
-                    onTriggered: Wallpapers.setDisplaySettings(root.output, { volume: volume.staged, mute: false })
+            icon: root.common.volume > 0 ? "volume_up" : "volume_off"
+            title: "Sound"
+            subtitle: "of wallpapers that play some"
+
+            RowLayout {
+                spacing: Theme.spacing.small
+
+                Slider {
+                    id: volume
+
+                    property real staged: root.common.volume
+
+                    Layout.preferredWidth: 180
+                    thin: true
+                    value: volumeSave.running ? staged : root.common.volume
+                    onMoved: v => {
+                        staged = v;
+                        volumeSave.restart();
+                    }
+
+                    Timer {
+                        id: volumeSave
+                        interval: 250
+                        onTriggered: Wallpapers.setDisplaySettings(root.output, { volume: volume.staged, mute: false })
+                    }
                 }
-            }
-            StyledText {
-                Layout.preferredWidth: 48
-                horizontalAlignment: Text.AlignRight
-                text: root.common.mixed.volume ? "mixed" : `${Math.round(root.common.volume * 100)}%`
-                font.pixelSize: Theme.size.small
+                StyledText {
+                    Layout.preferredWidth: 44
+                    horizontalAlignment: Text.AlignRight
+                    tabular: true
+                    text: root.common.mixed.volume ? "mixed" : `${Math.round((volumeSave.running ? volume.staged : root.common.volume) * 100)} %`
+                    font.pixelSize: Theme.size.small
+                }
             }
         }
 
-        StyledText {
-            Layout.preferredWidth: 100
-            text: "Transition"
-            dim: true
-            font.pixelSize: Theme.size.small
-        }
-        RowLayout {
+        SettingRow {
             Layout.fillWidth: true
-            spacing: Theme.spacing.small
-            Switch {
-                checked: root.common.transition === "fade"
-                onToggled: on => Wallpapers.setDisplaySetting(root.output, "transition", on ? "fade" : "none")
-            }
-            TextBox {
-                id: durationField
-                Layout.preferredWidth: 80
-                Layout.maximumWidth: 80
-                placeholder: root.common.mixed.duration ? "mixed" : "ms"
-                input.validator: IntValidator { bottom: 0; top: 10000 }
-                Binding {
-                    target: durationField
-                    property: "text"
-                    when: !durationField.input.activeFocus
-                    value: root.common.mixed.duration ? "" : String(root.common.duration)
+            icon: "blur_on"
+            title: "Fade between wallpapers"
+            subtitle: root.common.transition === "fade" ? "how long the fade takes" : "off: the new one is there at once"
+
+            RowLayout {
+                spacing: Theme.spacing.medium
+
+                SegmentedButtons {
+                    visible: root.common.transition === "fade"
+                    readonly property var lengths: {
+                        const list = ["300", "600", "1000", "2000"];
+                        const now = String(root.common.duration);
+                        return !root.common.mixed.duration && !list.includes(now) ? list.concat([now]).sort((a, b) => a - b) : list;
+                    }
+                    model: lengths.map(ms => ({ key: ms, label: Number(ms) >= 1000 ? `${Number(ms) / 1000} s` : `${ms} ms` }))
+                    current: root.common.mixed.duration ? "" : String(root.common.duration)
+                    onSelected: key => Wallpapers.setDisplaySetting(root.output, "duration", Number(key))
                 }
-                onAccepted: {
-                    if (text !== "" && input.acceptableInput)
-                        Wallpapers.setDisplaySetting(root.output, "duration", Number(text));
+                Switch {
+                    checked: root.common.transition === "fade"
+                    onToggled: on => Wallpapers.setDisplaySetting(root.output, "transition", on ? "fade" : "none")
                 }
             }
-            StyledText { text: "ms"; dim: true; font.pixelSize: Theme.size.small }
         }
 
-        StyledText {
-            Layout.preferredWidth: 100
-            text: "Background"
-            dim: true
-            font.pixelSize: Theme.size.small
-        }
-        RowLayout {
+        SettingRow {
             Layout.fillWidth: true
-            spacing: Theme.spacing.small
-            TextBox {
-                id: backgroundField
-                Layout.fillWidth: true
-                Layout.maximumWidth: 220
-                placeholder: root.common.mixed.color ? "mixed" : "#000000"
-                Binding {
-                    target: backgroundField
-                    property: "text"
-                    when: !backgroundField.input.activeFocus
-                    value: root.common.mixed.color ? "" : root.common.color
+            icon: "format_color_fill"
+            title: "Background"
+            subtitle: "around a wallpaper that does not fill the screen"
+
+            RowLayout {
+                spacing: Theme.spacing.small
+
+                Rectangle {
+                    implicitWidth: 22
+                    implicitHeight: 22
+                    radius: 11
+                    color: /^#[0-9a-f]{6}$/i.test(backgroundField.text) ? backgroundField.text : "transparent"
+                    border.width: 1
+                    border.color: Theme.outline
                 }
-                onAccepted: Wallpapers.setDisplaySetting(root.output, "color", text)
+                TextBox {
+                    id: backgroundField
+
+                    Layout.preferredWidth: 110
+                    placeholder: root.common.mixed.color ? "mixed" : "#000000"
+                    Binding {
+                        target: backgroundField
+                        property: "text"
+                        when: !backgroundField.input.activeFocus
+                        value: root.common.mixed.color ? "" : root.common.color
+                    }
+                    onAccepted: Wallpapers.setDisplaySetting(root.output, "color", text)
+                }
             }
         }
     }
 
+    // ── This wallpaper: the project's own properties ─────────
+
     StyledText {
         Layout.fillWidth: true
         visible: root.section !== "general"
-        text: root.properties.length ? "Wallpaper settings · changes apply to matching projects on the selected displays"
-            : "Apply this wallpaper on the selected displays to edit its project settings"
+        text: root.properties.length ? `Its own options${root.output === "*" ? "" : ` on ${root.output}`}`
+            : "Apply this wallpaper first, then its own options show up here"
         dim: true
         font.pixelSize: Theme.size.small
         wrapMode: Text.Wrap
     }
 
-    Flickable {
+    ColumnLayout {
         visible: root.section !== "general"
         Layout.fillWidth: true
-        Layout.preferredHeight: Math.min(propertiesColumn.implicitHeight, 180)
-        contentHeight: propertiesColumn.implicitHeight
-        clip: true
-        boundsBehavior: Flickable.StopAtBounds
+        spacing: 4
 
-        ColumnLayout {
-            id: propertiesColumn
-            width: parent.width
-            spacing: Theme.spacing.small
-            Repeater {
-                model: root.properties
+        Repeater {
+            model: root.properties
+
+            SettingRow {
+                id: setting
+
+                required property var modelData
+
+                Layout.fillWidth: true
+                title: Wallpapers.propertyLabel(setting.modelData)
+                subtitle: setting.modelData.mixed ? "differs between the displays" : ""
+
+                // One child for the row's slot; the controls that do not fit the type hide
                 RowLayout {
-                    id: setting
-                    required property var modelData
-                    Layout.fillWidth: true
-                    spacing: Theme.spacing.medium
-                    StyledText {
-                        Layout.preferredWidth: Math.min(260, root.width * 0.35)
-                        text: Wallpapers.propertyLabel(setting.modelData)
-                        elide: Text.ElideRight
-                        font.pixelSize: Theme.size.small
-                    }
+                    spacing: Theme.spacing.small
+
                     Switch {
                         visible: setting.modelData.type === "bool"
                         checked: setting.modelData.value === true && !setting.modelData.mixed
                         onToggled: on => Wallpapers.setSceneSetting(root.output, setting.modelData.name, on, root.projectPath)
                     }
-                    Slider {
-                        id: slider
+                    RowLayout {
                         visible: setting.modelData.type === "slider"
-                        property real lower: Number(setting.modelData.min ?? 0)
-                        property real upper: Number(setting.modelData.max ?? 1)
-                        property real staged: Number(setting.modelData.value ?? 0)
-                        Layout.preferredWidth: 180
-                        thin: true
-                        value: upper > lower ? ((save.running ? staged : Number(setting.modelData.value)) - lower) / (upper - lower) : 0
-                        onMoved: v => {
-                            const step = Number(setting.modelData.step ?? 0);
-                            let next = lower + v * (upper - lower);
-                            if (step > 0) next = lower + Math.round((next - lower) / step) * step;
-                            staged = Math.max(lower, Math.min(upper, next));
-                            save.restart();
+                        spacing: Theme.spacing.small
+
+                        Slider {
+                            id: slider
+
+                            property real lower: Number(setting.modelData.min ?? 0)
+                            property real upper: Number(setting.modelData.max ?? 1)
+                            property real staged: Number(setting.modelData.value ?? 0)
+
+                            Layout.preferredWidth: 180
+                            thin: true
+                            value: upper > lower ? ((save.running ? staged : Number(setting.modelData.value)) - lower) / (upper - lower) : 0
+                            onMoved: v => {
+                                const step = Number(setting.modelData.step ?? 0);
+                                let next = lower + v * (upper - lower);
+                                if (step > 0)
+                                    next = lower + Math.round((next - lower) / step) * step;
+                                staged = Math.max(lower, Math.min(upper, next));
+                                save.restart();
+                            }
+
+                            Timer {
+                                id: save
+                                interval: 150
+                                onTriggered: Wallpapers.setSceneSetting(root.output, setting.modelData.name, slider.staged, root.projectPath)
+                            }
                         }
-                        Timer {
-                            id: save
-                            interval: 150
-                            onTriggered: Wallpapers.setSceneSetting(root.output, setting.modelData.name, slider.staged, root.projectPath)
+                        StyledText {
+                            Layout.preferredWidth: 44
+                            horizontalAlignment: Text.AlignRight
+                            tabular: true
+                            text: setting.modelData.mixed ? "mixed" : String(Math.round((save.running ? slider.staged : Number(setting.modelData.value)) * 100) / 100)
+                            font.pixelSize: Theme.size.small
                         }
-                    }
-                    StyledText {
-                        visible: setting.modelData.type === "slider"
-                        text: setting.modelData.mixed ? "mixed" : String(Math.round(Number(setting.modelData.value) * 100) / 100)
-                        font.pixelSize: Theme.size.small
                     }
                     Choice {
                         visible: setting.modelData.type === "combo"
@@ -340,24 +337,42 @@ ColumnLayout {
                         displayText: currentIndex < 0 ? "mixed" : currentText
                         onActivated: index => Wallpapers.setSceneSetting(root.output, setting.modelData.name, model[index].value, root.projectPath)
                     }
-                    TextBox {
-                        id: textField
+                    RowLayout {
                         visible: ["color", "textinput", "file", "directory", "scenetexture"].includes(setting.modelData.type)
-                        Layout.preferredWidth: 220
-                        Binding {
-                            target: textField
-                            property: "text"
-                            when: !textField.input.activeFocus
-                            value: setting.modelData.mixed ? "" : String(setting.modelData.value ?? "")
+                        spacing: Theme.spacing.small
+
+                        // Wallpaper Engine colors are "r g b" from 0 to 1
+                        Rectangle {
+                            visible: setting.modelData.type === "color"
+                            implicitWidth: 22
+                            implicitHeight: 22
+                            radius: 11
+                            color: {
+                                const c = String(setting.modelData.value ?? "").trim().split(/\s+/).map(Number);
+                                return c.length >= 3 && c.every(n => !isNaN(n)) ? Qt.rgba(c[0], c[1], c[2], 1) : "transparent";
+                            }
+                            border.width: 1
+                            border.color: Theme.outline
                         }
-                        placeholder: setting.modelData.mixed ? "mixed" : ""
-                        onAccepted: Wallpapers.setSceneSetting(root.output, setting.modelData.name, text, root.projectPath)
+                        TextBox {
+                            id: textField
+
+                            Layout.preferredWidth: 200
+                            Binding {
+                                target: textField
+                                property: "text"
+                                when: !textField.input.activeFocus
+                                value: setting.modelData.mixed ? "" : String(setting.modelData.value ?? "")
+                            }
+                            placeholder: setting.modelData.mixed ? "mixed" : ""
+                            onAccepted: Wallpapers.setSceneSetting(root.output, setting.modelData.name, text, root.projectPath)
+                        }
                     }
-                    Item { Layout.fillWidth: true }
                 }
             }
         }
     }
+
     StyledText {
         Layout.fillWidth: true
         visible: Wallpapers.glintError !== ""

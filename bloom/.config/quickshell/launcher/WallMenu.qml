@@ -234,11 +234,14 @@ Item {
                         opacity: 0.75
                         font.pixelSize: Theme.size.small
                     }
-                    Button {
+                    // Its own options (the "This wallpaper" page)
+                    IconButton {
                         visible: Wallpapers.useGlint && root.selected !== null
-                        compact: true
                         icon: "tune"
-                        onClicked: root.page = "wallpaper"
+                        restColor: Theme.scrim
+                        iconColor: Theme.textOnScrim
+                        active: root.page === "wallpaper"
+                        onClicked: root.page = root.page === "wallpaper" ? "library" : "wallpaper"
                     }
                     Button {
                         id: applyButton
@@ -276,19 +279,43 @@ Item {
             Tabs {
                 visible: Wallpapers.useGlint
                 model: [
-                    { key: "library", label: "Library", icon: "wallpaper" },
-                    { key: "general", label: "Settings", icon: "tune" },
-                    { key: "wallpaper", label: "Wallpaper", icon: "settings" }
+                    { key: "library", label: "Library", icon: "grid_view" },
+                    { key: "general", label: "Engine", icon: "settings" },
+                    { key: "wallpaper", label: "This wallpaper", icon: "tune" }
                 ]
                 current: root.page
                 onSelected: key => root.page = key
             }
 
-            Tabs {
+            // The library's filter, and what can be done with the library itself
+            RowLayout {
+                Layout.fillWidth: true
                 visible: !Wallpapers.useGlint || root.page === "library"
-                model: root.tabs
-                current: root.tab
-                onSelected: key => root.tab = key
+                spacing: Theme.spacing.small
+
+                SegmentedButtons {
+                    model: root.tabs
+                    current: root.tab
+                    onSelected: key => root.tab = key
+                }
+                Item {
+                    Layout.fillWidth: true
+                }
+                IconButton {
+                    visible: Wallpapers.useGlint
+                    icon: "refresh"
+                    tonal: true
+                    disabled: Wallpapers.loading
+                    onClicked: Wallpapers.refresh()
+                }
+                Button {
+                    visible: Wallpapers.useGlint
+                    compact: true
+                    variant: "tonal"
+                    icon: "open_in_new"
+                    text: "Workshop"
+                    onClicked: Quickshell.execDetached(["xdg-open", "steam://openurl/https://steamcommunity.com/app/431960/workshop/"])
+                }
             }
 
             Item {
@@ -439,39 +466,30 @@ Item {
             }
         }
 
+        // Which displays apply and the settings go to
         RowLayout {
             Layout.columnSpan: 2
             Layout.fillWidth: true
-            visible: Wallpapers.useGlint
+            visible: Wallpapers.useGlint && Wallpapers.glintOutputs.length > 0
+            spacing: Theme.spacing.medium
 
-            Chip {
-                icon: "open_in_new"
-                text: "Steam Workshop"
-                onClicked: Quickshell.execDetached(["xdg-open", "steam://openurl/https://steamcommunity.com/app/431960/workshop/"])
+            Icon {
+                icon: "desktop_windows"
+                dim: true
+                size: Theme.icon.small
             }
-
-            Chip {
-                icon: "refresh"
-                text: "refresh library"
-                onClicked: Wallpapers.refresh()
+            StyledText {
+                text: "show on"
+                dim: true
+                font.pixelSize: Theme.size.small
             }
-
-            Item { Layout.fillWidth: true }
-        }
-
-        Flow {
-            Layout.columnSpan: 2
-            Layout.fillWidth: true
-            visible: Wallpapers.useGlint
-            spacing: Theme.spacing.small
-            Repeater {
-                model: ["*"].concat(Wallpapers.glintOutputs.map(output => output.name))
-                Chip {
-                    required property string modelData
-                    text: modelData === "*" ? "all displays" : modelData
-                    selected: root.targetOutput === modelData
-                    onClicked: root.targetOutput = modelData
-                }
+            SegmentedButtons {
+                model: [{ key: "*", label: "all displays" }].concat(Wallpapers.glintOutputs.map(output => ({ key: output.name, label: output.name })))
+                current: root.targetOutput
+                onSelected: key => root.targetOutput = key
+            }
+            Item {
+                Layout.fillWidth: true
             }
         }
 
