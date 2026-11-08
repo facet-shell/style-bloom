@@ -28,6 +28,8 @@ Scope {
     // ── You ──────────────────────────────────────────────────
 
     property string login: ""
+    // The GraphQL node id, for "your last commit" in an organisation's repos
+    property string viewerId: ""
     property string name: ""
     property string avatar: ""
     // [{ date, count, weekday }], oldest first, the last year
@@ -60,6 +62,13 @@ Scope {
     property var orgPrs: []
     property int orgPrCount: 0
     property int orgReviewCount: 0
+    property int orgIssueCount: 0
+    // [{ name, url, private, language, color, pushed, title, author, yours, mineAt }], the
+    // repos pushed last; title/author: the newest commit on the default branch; mineAt: your
+    // newest commit there ("" if none of the last ones)
+    property var orgRepos: []
+    // The repo here with your newest commit: { name, url, title, at } or null
+    property var orgMine: null
     // [{ repo, name, state (ok, bad, run), branch, updated, url }], newest first
     property var orgRuns: []
     // [{ repo, title, number }] with the board's Status "In progress"
@@ -168,7 +177,7 @@ Scope {
         if (!force && status === "ok" && Date.now() - fetchedAt < 120000)
             return;
         if (status !== "ok" || login === "")
-            check.run(["sh", "-c", "command -v gh >/dev/null 2>&1 || exit 127; exec gh api user --jq .login"]);
+            check.run(["sh", "-c", "command -v gh >/dev/null 2>&1 || exit 127; exec gh api graphql -f query='query { viewer { login id } }' --jq '.data.viewer.login + \" \" + .data.viewer.id'"]);
         else
             askMe();
     }
@@ -182,6 +191,9 @@ Scope {
             orgPrs = [];
             orgRuns = [];
             orgBoard = [];
+            orgRepos = [];
+            orgMine = null;
+            orgIssueCount = 0;
             orgInfo = { login: name, name: "", avatar: "", repos: 0 };
         }
         org = name;
@@ -189,6 +201,8 @@ Scope {
         orgCall.run(["gh", "api", "graphql",
             "-f", `query=${boardBlocked ? orgQueryNoBoard : orgQuery}`,
             "-f", `org=${name}`,
+            "-f", `me=${viewerId}`,
+            "-f", `qIssues=is:issue is:open org:${name}`,
             "-f", `qPrs=is:pr is:open org:${name} sort:updated-desc`,
             "-f", `qReview=is:pr is:open org:${name} review-requested:${login}`]);
         // The org name goes in as $1, never into the script itself
@@ -357,6 +371,29 @@ Scope {
         orgPrs = (answer.data.prs?.nodes ?? []).map(prOf).filter(p => p);
         orgPrCount = answer.data.prs?.issueCount ?? orgPrs.length;
         orgReviewCount = answer.data.review?.issueCount ?? 0;
+        orgIssueCount = answer.data.issues?.issueCount ?? 0;
+
+        // The repos pushed last, and where your own newest commit is
+        const repos = [];
+        let mine = null;
+        for (const r of o.recent?.nodes ?? []) {
+            if (!r || r.isArchived)
+                continue;
+            const head = r.defaultBranchRef?.target ?? {};
+            const last = head.last?.nodes?.[0] ?? null;
+            const own = head.mine?.nodes?.[0] ?? null;
+            const author = last?.author?.user?.login ?? last?.author?.name ?? "";
+            repos.push({
+                name: r.name, url: r.url ?? "", private: r.isPrivate ?? false,
+                language: r.primaryLanguage?.name ?? "", color: r.primaryLanguage?.color ?? "",
+                pushed: r.pushedAt ?? "", title: last?.messageHeadline ?? "", author,
+                yours: author !== "" && author === login, mineAt: own?.committedDate ?? ""
+            });
+            if (own && (!mine || Date.parse(own.committedDate) > Date.parse(mine.at)))
+                mine = { name: r.name, url: r.url ?? "", title: own.messageHeadline ?? "", at: own.committedDate };
+        }
+        orgRepos = repos.slice(0, 6);
+        orgMine = mine;
 
         // Every open board's items whose Status says "in progress"
         const board = [];
@@ -434,10 +471,17 @@ Scope {
     ].join("\n")
 
     readonly property string orgQuery: [
-        "query($org: String!, $qPrs: String!, $qReview: String!) {",
+        "query($org: String!, $me: ID, $qIssues: String!, $qPrs: String!, $qReview: String!) {",
         "  organization(login: $org) {",
         "    login name avatarUrl",
         "    repositories(first: 1) { totalCount }",
+        "    recent: repositories(first: 12, orderBy: { field: PUSHED_AT, direction: DESC }) { nodes {",
+        "      name url isPrivate isArchived pushedAt primaryLanguage { name color }",
+        "      defaultBranchRef { target { ... on Commit {",
+        "        last: history(first: 1) { nodes { messageHeadline committedDate author { name user { login } } } }",
+        "        mine: history(first: 1, author: { id: $me }) { nodes { messageHeadline committedDate } }",
+        "      } } }",
+        "    } }",
         "    projectsV2(first: 5, orderBy: { field: UPDATED_AT, direction: DESC }) {",
         "      nodes { title closed items(first: 100) { nodes {",
         '        status: fieldValueByName(name: "Status") { ... on ProjectV2ItemFieldSingleSelectValue { name } }',
@@ -447,6 +491,7 @@ Scope {
         "  }",
         "  prs: search(query: $qPrs, type: ISSUE, first: 8) { issueCount nodes { ... on PullRequest { " + prFields + " } } }",
         "  review: search(query: $qReview, type: ISSUE, first: 1) { issueCount }",
+        "  issues: search(query: $qIssues, type: ISSUE, first: 1) { issueCount }",
         "}"
     ].join("\n")
 
@@ -517,7 +562,9 @@ Scope {
         id: check
         handler: (code, out, err) => {
             if (code === 0 && out.trim() !== "") {
-                root.login = out.trim();
+                const parts = out.trim().split(" ");
+                root.login = parts[0];
+                root.viewerId = parts[1] ?? "";
                 root.status = "ok";
                 root.askMe();
             } else {

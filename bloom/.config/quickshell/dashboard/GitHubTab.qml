@@ -283,6 +283,14 @@ Item {
                     onClicked: root.openSearch(false)
                 }
                 Chip {
+                    readonly property int count: root.github?.orgIssueCount ?? 0
+
+                    visible: !root.mine && count > 0
+                    icon: "error_outline"
+                    text: count === 1 ? "1 open issue" : `${count} open issues`
+                    onClicked: Qt.openUrlExternally(`https://github.com/issues?q=${encodeURIComponent(`is:issue is:open org:${root.scope}`)}`)
+                }
+                Chip {
                     readonly property var done: (root.github?.orgRuns ?? []).filter(r => r.state === "ok" || r.state === "bad")
 
                     visible: !root.mine && done.length > 0
@@ -788,29 +796,72 @@ Item {
         RowLayout {
             spacing: Theme.spacing.medium
 
-            ListCard {
+            ColumnLayout {
                 Layout.preferredWidth: (root.width - Theme.spacing.medium) * 0.58
                 Layout.fillWidth: false
                 Layout.alignment: Qt.AlignTop
-                heading: "Pull requests"
-                empty: root.github?.orgFetchedAt > 0 ? "No open pull requests" : "Asking GitHub …"
-                count: (root.github?.orgPrs ?? []).length
+                spacing: Theme.spacing.medium
 
-                Repeater {
-                    model: root.github?.orgPrs ?? []
+                // Your own newest commit in this organisation's repos
+                ListCard {
+                    visible: root.github?.orgMine ?? false
+                    heading: "Where you worked last"
+                    count: 1
 
                     PrRow {
-                        required property var modelData
-                        required property int index
+                        first: true
+                        icon: "history"
+                        tone: "merged"
+                        title: root.github?.orgMine?.name ?? ""
+                        meta: `${root.github?.orgMine?.title ?? ""} · ${root.github?.ago(root.github?.orgMine?.at ?? "") ?? ""}`
+                        url: root.github?.orgMine?.url ?? ""
+                    }
+                }
 
-                        first: index === 0
-                        icon: root.prIcon(modelData.state)
-                        tone: modelData.state
-                        title: modelData.title
-                        meta: `${root.shortRepo(modelData.repo)} #${modelData.number} · ${modelData.author} · ${root.github.ago(modelData.updated)}`
-                        review: modelData.review
-                        ci: modelData.ci
-                        url: modelData.url
+                ListCard {
+                    heading: "Pull requests"
+                    empty: root.github?.orgFetchedAt > 0 ? "No open pull requests" : "Asking GitHub …"
+                    count: (root.github?.orgPrs ?? []).length
+
+                    Repeater {
+                        model: root.github?.orgPrs ?? []
+
+                        PrRow {
+                            required property var modelData
+                            required property int index
+
+                            first: index === 0
+                            icon: root.prIcon(modelData.state)
+                            tone: modelData.state
+                            title: modelData.title
+                            meta: `${root.shortRepo(modelData.repo)} #${modelData.number} · ${modelData.author} · ${root.github.ago(modelData.updated)}`
+                            review: modelData.review
+                            ci: modelData.ci
+                            url: modelData.url
+                        }
+                    }
+                }
+
+                // The repos pushed last, with their newest commit; yours in the accent color
+                ListCard {
+                    heading: "Repos · pushed last"
+                    empty: root.github?.orgFetchedAt > 0 ? "No repos" : "Asking GitHub …"
+                    count: (root.github?.orgRepos ?? []).length
+
+                    Repeater {
+                        model: root.github?.orgRepos ?? []
+
+                        PrRow {
+                            required property var modelData
+                            required property int index
+
+                            first: index === 0
+                            icon: modelData.private ? "lock" : "folder_open"
+                            tone: modelData.yours ? "merged" : "draft"
+                            title: modelData.language !== "" ? `${modelData.name} · ${modelData.language}` : modelData.name
+                            meta: `${modelData.title} · ${modelData.yours ? "you" : modelData.author} · ${root.github.ago(modelData.pushed)}`
+                            url: modelData.url
+                        }
                     }
                 }
             }
