@@ -41,7 +41,7 @@ Scope {
         target: Hyprland
         enabled: Config.barOverFullscreen
         function onRawEvent(event) {
-            if (["fullscreen", "workspacev2", "focusedmonv2", "openwindow", "closewindow", "movewindowv2"].includes(event.name))
+            if (["fullscreen", "workspacev2", "focusedmonv2", "openwindow", "closewindow", "movewindowv2", "activespecialv2"].includes(event.name))
                 fullscreenRead.restart();
         }
     }
@@ -50,6 +50,7 @@ Scope {
         id: fullscreenRead
         interval: 50
         onTriggered: {
+            Hyprland.refreshMonitors();
             Hyprland.refreshWorkspaces();
             Hyprland.refreshToplevels();
         }
@@ -92,14 +93,21 @@ Scope {
             readonly property HyprlandMonitor monitor: Hyprland.monitorFor(modelData)
 
             // A window covers this screen fullscreen (a maximized one leaves the bar in sight);
-            // the frame sits on the Top layer, under it. Same reading as tui's bar.
+            // the frame sits on the Top layer, under it. Same reading as tui's bar. The special
+            // workspace shown on top counts too (HyprlandMonitor has no property for it, only
+            // hyprctl monitors: lastIpcObject)
             readonly property bool fullscreen: {
-                const ws = monitor?.activeWorkspace;
-                if (!ws?.hasFullscreen)
-                    return false;
-                const modes = ws.toplevels.values.map(t => t.lastIpcObject?.fullscreen).filter(f => f !== undefined);
-                // Not read from hyprctl yet: the workspace's word is enough
-                return modes.length === 0 || modes.some(f => f === true || (Number(f) & 2) !== 0);
+                const special = monitor?.lastIpcObject?.specialWorkspace?.name ?? "";
+                const shown = [monitor?.activeWorkspace];
+                if (special !== "")
+                    shown.push(Hyprland.workspaces.values.find(w => w.name === special));
+                return shown.some(ws => {
+                    if (!ws?.hasFullscreen)
+                        return false;
+                    const modes = ws.toplevels.values.map(t => t.lastIpcObject?.fullscreen).filter(f => f !== undefined);
+                    // Not read from hyprctl yet: the workspace's word is enough
+                    return modes.length === 0 || modes.some(f => f === true || (Number(f) & 2) !== 0);
+                });
             }
 
             // Over a fullscreen window, or with the frame away in game mode, resting the mouse on
@@ -209,7 +217,10 @@ Scope {
                 readonly property bool overFullscreen: perScreen.peek || (perScreen.canPeek && barPresence > 0.001)
 
                 screen: perScreen.modelData
-                visible: presence > 0.001 || barPresence > 0.001
+                // Unmapped while it sits under a fullscreen window: moved up to the Overlay layer
+                // it would first show its last buffer there (the whole frame) for a moment
+                // before the slide; mapped fresh, the first frame is already the peeking bar
+                visible: overFullscreen || (!perScreen.canPeek && (presence > 0.001 || barPresence > 0.001))
                 color: "transparent"
                 exclusionMode: ExclusionMode.Ignore
                 // Over a fullscreen game while the bar peeks
