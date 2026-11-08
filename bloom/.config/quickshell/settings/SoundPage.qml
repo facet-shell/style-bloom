@@ -100,6 +100,16 @@ ColumnLayout {
         font.pixelSize: Theme.size.small
     }
 
+    // What the volume keys and a keyboard's knob turn
+    ConfigChoice {
+        visible: page.sub === "output" && Audio.goxlrAvailable
+        key: "volumeKeys"
+        title: "Volume keys and knob"
+        subtitle: Config.volumeKeys === "goxlr-system" ? "the GoXLR's System channel, like the control center's big slider" : "the default output in PipeWire"
+        icon: "keyboard"
+        options: [["goxlr-system", "GoXLR System"], ["output", "Default output"]]
+    }
+
     // ── Channels ──
 
     ConfigChoice {
