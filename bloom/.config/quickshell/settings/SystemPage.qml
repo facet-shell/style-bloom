@@ -145,4 +145,20 @@ ColumnLayout {
             elide: Text.ElideNone
         }
     }
+
+    // Who made it, and where to find them
+    SettingRow {
+        Layout.fillWidth: true
+        visible: page.sub === "about"
+        interactive: true
+        icon: "favorite"
+        title: "Made with love by vxnsin"
+        subtitle: "vensin.dev"
+        onClicked: Qt.openUrlExternally("https://vensin.dev/")
+
+        Icon {
+            icon: "open_in_new"
+            dim: true
+        }
+    }
 }
