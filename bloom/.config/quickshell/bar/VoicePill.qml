@@ -8,9 +8,13 @@ Pill {
     id: root
 
     property real availableWidth: 300
+    property var bar: null
+    property var screen: null
     readonly property var members: DiscordBridge.voice.members
+    readonly property var me: members.find(m => m.you) ?? null
     readonly property int limit: {
-        let used = 68;
+        // The icon, the three buttons and the padding come first
+        let used = 68 + 3 * 30 + 8;
         let count = 0;
         for (const person of members.slice(0, Config.voiceBarMaxUsers)) {
             used += 34;
@@ -21,7 +25,8 @@ Pill {
         return count;
     }
     readonly property var shownMembers: members.slice(0, limit)
-    visible: Config.voiceOverlayInBar && !Bloom.gaming && DiscordBridge.overlayShown && limit > 0
+    // Also while Discord is on screen: the buttons are worth having there too
+    visible: Config.voiceOverlayInBar && !Bloom.gaming && DiscordBridge.inVoice
     padding: 10
     spacing: 8
 
@@ -110,5 +115,45 @@ Pill {
         text: `+${root.members.length - root.shownMembers.length}`
         font.pixelSize: Theme.size.tiny
         dim: true
+    }
+
+    Rectangle {
+        implicitWidth: 1
+        implicitHeight: 18
+        color: Theme.alpha(Theme.outline, 0.8)
+    }
+
+    // Your own mute, deafen and Go Live
+    IconButton {
+        size: 28
+        iconSize: 17
+        icon: root.me?.muted ? "mic_off" : "mic"
+        iconColor: root.me?.muted ? Theme.error : Theme.dim
+        onClicked: DiscordBridge.send({ cmd: "toggle_mute" })
+    }
+    IconButton {
+        size: 28
+        iconSize: 17
+        icon: root.me?.deafened ? "headset_off" : "headphones"
+        iconColor: root.me?.deafened ? Theme.error : Theme.dim
+        onClicked: DiscordBridge.send({ cmd: "toggle_deafen" })
+    }
+    IconButton {
+        id: streamButton
+
+        size: 28
+        iconSize: 17
+        icon: DiscordBridge.streamLive ? "cast_connected" : "cast"
+        iconColor: DiscordBridge.streamLive ? Theme.error : Theme.dim
+        active: root.bar?.streamPanel.open ?? false
+        onClicked: {
+            const panel = root.bar?.streamPanel;
+            if (!panel)
+                return;
+            if (panel.open && panel.anchorItem === streamButton)
+                panel.open = false;
+            else
+                panel.popup(root.screen, streamButton);
+        }
     }
 }

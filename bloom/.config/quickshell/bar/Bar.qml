@@ -22,6 +22,7 @@ Scope {
 
     readonly property var trayMenu: trayMenuDrawer
     readonly property var powerMenu: powerMenuDrawer
+    readonly property var streamPanel: streamPanelDrawer
 
     signal dashboardRequested(var screen)
     signal controlCenterRequested(var screen)
@@ -45,6 +46,10 @@ Scope {
         id: trayMenuDrawer
     }
 
+    StreamPanel {
+        id: streamPanelDrawer
+    }
+
     PowerMenu {
         id: powerMenuDrawer
         onLockRequested: root.lockRequested()
@@ -55,6 +60,7 @@ Scope {
         if (hidden) {
             trayMenuDrawer.open = false;
             powerMenuDrawer.open = false;
+            streamPanelDrawer.open = false;
         }
     }
 }

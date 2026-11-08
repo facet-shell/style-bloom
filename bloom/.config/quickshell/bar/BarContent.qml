@@ -48,6 +48,8 @@ Item {
         }
 
         VoicePill {
+            bar: root.bar
+            screen: root.screen
             Layout.maximumWidth: Math.max(0, (root.width / 2) - 300)
             availableWidth: Math.max(0, (root.width / 2) - 300)
         }
