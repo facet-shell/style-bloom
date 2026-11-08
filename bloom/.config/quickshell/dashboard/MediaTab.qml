@@ -5,6 +5,7 @@ import Quickshell.Services.Mpris
 import Quickshell.Widgets
 import qs.components
 import qs.config
+import qs.services
 import qs.media
 
 // The media tab: the big cover, title, artist, progress (a click seeks) and the controls.
@@ -267,7 +268,7 @@ RowLayout {
             }
             Icon {
                 Layout.leftMargin: Theme.spacing.small
-                icon: (root.player?.volume ?? 0) <= 0 ? "volume_off" : "volume_up"
+                icon: Audio.volumeIcon(root.player?.volume ?? 0, false)
                 size: Theme.icon.normal
                 dim: true
             }

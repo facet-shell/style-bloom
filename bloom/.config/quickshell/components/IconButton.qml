@@ -7,7 +7,8 @@ import qs.config
 //
 //   icon        Material Symbols name
 //   size        the button (Theme.control.iconButton, 36); iconSize (Theme.icon.normal)
-//   active      drawn "on": Theme.high behind it, the icon in Theme.text
+//   active      drawn "on": Theme.secondaryContainer behind it, the icon in Theme.primary
+//               (hover is Theme.high with Theme.text, so on and hovered stay apart)
 //   filled      the main action (play): Theme.primary with the icon in textOnPrimary; it rounds
 //               into a soft square while `active` (the mockup's play/pause)
 //   fillColor   behind a filled button (Theme.primary; the album color on the music parts)
@@ -28,7 +29,8 @@ Item {
     property color fillColor: Theme.primary
     property bool tonal: false
     property color restColor: "transparent"
-    property color iconColor: filled ? Theme.textOnPrimary : active || layer.containsMouse ? Theme.text : Theme.dim
+    // On (active) is the accent, hover only a grey wash: the two must not look alike
+    property color iconColor: filled ? Theme.textOnPrimary : active ? Theme.primary : layer.containsMouse ? Theme.text : Theme.dim
     property bool badge: false
     property color badgeRing: Theme.surface
     property bool disabled: false
@@ -49,7 +51,8 @@ Item {
         radius: root.filled && root.active ? Theme.rounding.normal : height / 2
         color: root.filled ? root.fillColor
             : root.tonal ? Theme.secondaryContainer
-            : root.active || layer.containsMouse ? Theme.high
+            : root.active ? Theme.secondaryContainer
+            : layer.containsMouse ? Theme.high
             : root.restColor
         scale: layer.pressed ? 0.86 : 1
 
