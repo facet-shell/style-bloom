@@ -211,7 +211,8 @@ Scope {
                 property real presence: root.away ? 0 : 1
                 // The bar alone: there with the frame, up out of sight over a fullscreen window
                 // (it is under it anyway), so a peek slides it down instead of popping it up
-                property real barPresence: (!root.away && !perScreen.fullscreen) || perScreen.peek ? 1 : 0
+                readonly property bool barShown: (!root.away && !perScreen.fullscreen) || perScreen.peek
+                property real barPresence: barShown ? 1 : 0
                 // On the Overlay layer while the bar peeks and until it has slid up again; the
                 // frame around the hole is not drawn there
                 readonly property bool overFullscreen: perScreen.peek || (perScreen.canPeek && barPresence > 0.001)
@@ -246,11 +247,13 @@ Scope {
                         easing.bezierCurve: Theme.curve.emphasizedDecel
                     }
                 }
+                // Down fast with a soft landing; up again with a gentle start and end, the
+                // decel curve snapped it nearly out of sight at once and then crawled
                 Behavior on barPresence {
                     NumberAnimation {
-                        duration: Theme.anim.drawerIn
+                        duration: window.barShown ? Theme.anim.drawerIn : Theme.anim.drawerOut
                         easing.type: Easing.BezierSpline
-                        easing.bezierCurve: Theme.curve.emphasizedDecel
+                        easing.bezierCurve: window.barShown ? Theme.curve.emphasizedDecel : Theme.curve.standard
                     }
                 }
 
@@ -295,7 +298,8 @@ Scope {
                     width: window.width
                     height: Theme.frame.bar
                     y: -height * (1 - window.barPresence)
-                    opacity: window.barPresence
+                    // Stays solid for most of the slide, fades only the last bit
+                    opacity: Math.min(1, window.barPresence * 2.5)
 
                     HoverHandler {
                         id: barHover
