@@ -216,6 +216,10 @@ Scope {
                 // On the Overlay layer while the bar peeks and until it has slid up again; the
                 // frame around the hole is not drawn there
                 readonly property bool overFullscreen: perScreen.peek || (perScreen.canPeek && barPresence > 0.001)
+                // Over a fullscreen window the frame is not drawn, but a drawer opened from the
+                // peeking bar (control center, dashboard, …) joins the border with its round
+                // corners; while one is out the border slides in too, still without taking space
+                property real edgePresence: perScreen.peek && Bloom.anyOpen(perScreen.modelData.name) ? 1 : 0
 
                 screen: perScreen.modelData
                 // Unmapped while it sits under a fullscreen window: moved up to the Overlay layer
@@ -249,6 +253,13 @@ Scope {
                 }
                 // Down fast with a soft landing; up again with a gentle start and end, the
                 // decel curve snapped it nearly out of sight at once and then crawled
+                Behavior on edgePresence {
+                    NumberAnimation {
+                        duration: window.edgePresence < 0.5 ? Theme.anim.drawerIn : Theme.anim.drawerOut
+                        easing.type: Easing.BezierSpline
+                        easing.bezierCurve: Theme.curve.standard
+                    }
+                }
                 Behavior on barPresence {
                     NumberAnimation {
                         duration: window.barShown ? Theme.anim.drawerIn : Theme.anim.drawerOut
@@ -263,8 +274,8 @@ Scope {
                 // The surface everywhere but the hole (even-odd: the hole cuts out)
                 Shape {
                     anchors.fill: parent
-                    // Not while the bar peeks: over a fullscreen window only the bar comes
-                    opacity: window.overFullscreen ? 0 : window.presence
+                    // While the bar peeks only the bar comes, and the border with a drawer out
+                    opacity: window.overFullscreen ? (window.edgePresence > 0.001 ? 1 : 0) : window.presence
                     preferredRendererType: Shape.CurveRenderer
 
                     ShapePath {
@@ -276,10 +287,12 @@ Scope {
                         PathSvg {
                             path: {
                                 const W = window.width, H = window.height;
-                                const t = Theme.frame.border, b = Theme.frame.bar;
-                                if (W <= 2 * t || H <= b + t)
+                                // Over a fullscreen window the top edge rides with the sliding bar
+                                const t = Theme.frame.border * (window.overFullscreen ? window.edgePresence : 1);
+                                const b = Theme.frame.bar * (window.overFullscreen ? window.barPresence : 1);
+                                if (W <= 2 * t || H <= b + t || t <= 0)
                                     return "";
-                                const r = Math.min(Theme.rounding.hole, (W - 2 * t) / 2, (H - b - t) / 2);
+                                const r = Math.min(Theme.rounding.hole * (window.overFullscreen ? window.edgePresence : 1), (W - 2 * t) / 2, (H - b - t) / 2);
                                 const x0 = t, y0 = b, x1 = W - t, y1 = H - t;
                                 return `M 0 0 L ${W} 0 L ${W} ${H} L 0 ${H} Z `
                                     + `M ${x0} ${y0 + r} A ${r} ${r} 0 0 1 ${x0 + r} ${y0} L ${x1 - r} ${y0} `
