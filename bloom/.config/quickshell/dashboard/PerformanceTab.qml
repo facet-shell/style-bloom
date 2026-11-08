@@ -15,7 +15,15 @@ ColumnLayout {
     property string armed: ""
     // windowed or background
     property string list: "windowed"
-    readonly property var apps: list === "windowed" ? Tasks.windowed : Tasks.background.slice(0, 20)
+    // What the search field holds; it looks at the name, the window title and the pid
+    property string query: ""
+    readonly property var apps: {
+        const all = list === "windowed" ? Tasks.windowed : Tasks.background;
+        const q = query.trim().toLowerCase();
+        if (q === "")
+            return list === "windowed" ? all : all.slice(0, 20);
+        return all.filter(a => `${a.name} ${a.detail} ${a.pid}`.toLowerCase().includes(q)).slice(0, 40);
+    }
 
     spacing: Theme.spacing.medium
 
@@ -130,11 +138,27 @@ ColumnLayout {
             current: root.list
             onSelected: key => root.list = key
         }
+        SearchField {
+            id: search
+
+            Layout.preferredWidth: 240
+            implicitHeight: Theme.control.button
+            placeholder: "Search apps"
+            hint: root.query !== "" ? `${root.apps.length}` : ""
+            onTextChanged: root.query = text
+            onEscaped: {
+                if (text !== "")
+                    text = "";
+                else
+                    root.forceActiveFocus();
+            }
+        }
         StyledText {
             Layout.fillWidth: true
             horizontalAlignment: Text.AlignRight
             text: "close asks the app to quit · kill ends it at once (click twice) · 100% CPU is one core"
             dim: true
+            elide: Text.ElideLeft
             font.pixelSize: Theme.size.tiny
         }
     }
@@ -183,7 +207,7 @@ ColumnLayout {
 
             anchors.centerIn: parent
             visible: root.apps.length === 0
-            text: !Tasks.loaded ? "Reading /proc …" : root.list === "windowed" ? "No windows open" : "Nothing in the background"
+            text: !Tasks.loaded ? "Reading /proc …" : root.query.trim() !== "" ? `Nothing matches “${root.query.trim()}”` : root.list === "windowed" ? "No windows open" : "Nothing in the background"
             dim: true
         }
 
