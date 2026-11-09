@@ -551,7 +551,7 @@ RowLayout {
                     StyledText {
                         Layout.fillWidth: true
                         visible: Calendar.accounts === 0
-                        text: "Connect calendars once in a terminal: facet-calendar setup icloud, or facet-calendar setup google <client.json>"
+                        text: "Connect iCloud or Google in Settings → Calendars"
                         dim: true
                         wrapMode: Text.WordWrap
                         font.pixelSize: Theme.size.tiny

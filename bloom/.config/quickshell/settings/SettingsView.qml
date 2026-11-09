@@ -72,6 +72,11 @@ FocusScope {
             { key: "ambient", label: "Ambient", icon: "bedtime", subtitle: "after a while the clock shrinks and drifts" },
             { key: "weather", label: "Weather", icon: "partly_cloudy_day", subtitle: "the city, how often" }
         ] },
+        { key: "calendars", label: "Calendars", icon: "calendar_month", blurb: "iCloud and Google calendars in the dashboard", pages: [
+            { key: "accounts", label: "Accounts", icon: "calendar_month", subtitle: "what is connected, remove one" },
+            { key: "icloud", label: "Connect iCloud", icon: "cloud", subtitle: "Apple ID and an app-specific password", group: "Connect" },
+            { key: "google", label: "Connect Google", icon: "account_circle", subtitle: "your own OAuth client, then the browser" }
+        ] },
         { key: "apps", label: "Apps", icon: "widgets", blurb: "The facet modules and the apps around the shell", pages: [
             { key: "modules", label: "Modules", icon: "extension", subtitle: "update what is there, add what is not" },
             { key: "settings", label: "App settings", icon: "tune", subtitle: "Spotify's API, the keyboard, the GoXLR lights" }
@@ -109,7 +114,10 @@ FocusScope {
         output: "sound/output",
         input: "sound/input",
         channels: "sound/channels",
-        claude: "launcher/claude"
+        claude: "launcher/claude",
+        calendar: "calendars",
+        icloud: "calendars/icloud",
+        google: "calendars/google"
     })
 
     readonly property var current: categories.find(c => c.key === category) ?? categories[0]
@@ -230,6 +238,8 @@ FocusScope {
             return Config.lockAmbient ? `after ${Config.lockAmbientMinutes} min` : "off";
         case "shell/weather":
             return Config.weatherLocation || "from your connection";
+        case "calendars/accounts":
+            return Calendar.accountList.length > 0 ? `${Calendar.accountList.length} connected` : "none yet";
         case "apps/modules":
             return installed.length > 0 ? `${installed.length} installed` : "";
         case "system/updates":
@@ -272,6 +282,7 @@ FocusScope {
         themesProc.running = true;
         modulesProc.running = true;
         aboutProc.running = true;
+        Calendar.checkAccounts(true);
         themeState.reload();
         layoutState.reload();
         styleState.reload();
@@ -458,6 +469,12 @@ FocusScope {
         }
     }
     Component {
+        id: calendarsPage
+        CalendarsPage {
+            view: root
+        }
+    }
+    Component {
         id: appsPage
         AppsPage {
             view: root
@@ -478,6 +495,7 @@ FocusScope {
         sound: soundPage,
         launcher: launcherPage,
         shell: shellPage,
+        calendars: calendarsPage,
         apps: appsPage,
         system: systemPage
     })
